@@ -29,5 +29,14 @@ app.post('/api/transactions', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+// אתה צריך להוסיף את החלק הזה ב-server.js כדי שיהיה אפשר "למשוך" נתונים:
+app.get('/api/transactions', async (req, res) => {
+    try {
+        const transactions = await Transaction.find(); // שליפת כל הנתונים ממונגו
+        res.json(transactions);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.listen(5000, () => console.log('Server is running on port 5000'));
