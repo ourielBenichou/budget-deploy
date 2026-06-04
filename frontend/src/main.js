@@ -233,12 +233,12 @@ function saveToLocalStorage() {
 
 async function saveTransactionToServer(transaction) {
     try {
-        const response = await fetch('https://budget-app-5g9g.onrender.com', {
+        const response = await fetch('https://budget-deploy2.onrender.com/api/transactions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(transaction)
         });
-        
+                
         // כאן נדפיס את השגיאה האמיתית אם היא קיימת
         if (!response.ok) {
             const errorData = await response.json();
