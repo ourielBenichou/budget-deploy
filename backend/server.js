@@ -38,5 +38,16 @@ app.get('/api/transactions', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// מחיקת רשומה
+app.delete('/api/transactions/:id', async (req, res) => {
+    await Transaction.findOneAndDelete({ id: req.params.id });
+    res.json({ message: "Deleted" });
+});
+
+// עדכון רשומה (עריכה)
+app.put('/api/transactions/:id', async (req, res) => {
+    await Transaction.findOneAndUpdate({ id: req.params.id }, req.body);
+    res.json({ message: "Updated" });
+});
 
 app.listen(5000, () => console.log('Server is running on port 5000'));

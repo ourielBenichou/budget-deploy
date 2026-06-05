@@ -427,4 +427,6 @@ async function fetchTransactionsFromServer() {
 }
 
 // קריאה לפונקציה מיד עם טעינת הדף
-fetchTransactionsFromServer();
+setInterval(() => {
+    fetchTransactionsFromServer();
+}, 5000);
