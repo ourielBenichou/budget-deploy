@@ -195,30 +195,21 @@ function renderTables() {
         const row = document.createElement('tr');
         const displayNameText = t.description || t.name || 'ללא שם';
         
-        row.innerHTML = `
-            <td><strong>${displayNameText}</strong></td>
-            <td>${t.day ? `ב-${t.day} לחודש` : '-'}</td>
-            <td>${t.amount.toLocaleString()} ₪</td>
-            <td class="actions-cell">
-                <button class="btn-edit" data-id="${t.id}" data-action="edit">ערוך</button>
-                <button class="btn-delete" data-id="${t.id}" data-action="delete">מחק</button>
-            </td>
-        `;
+    row.innerHTML = `
+    <td><strong>${displayNameText}</strong></td>
+    <td>${t.day ? `ב-${t.day} לחודש` : '-'}</td>
+    <td>${t.amount.toLocaleString()} ₪</td>
+    <td class="actions-cell">
+        <button class="btn-edit" onclick="window.startInlineEdit('${t.id}')">ערוך</button>
+        <button class="btn-delete" onclick="window.deleteTransaction('${t.id}')">מחק</button>
+    </td>
+`;
 
         if ((t.type === 'income' || t.type === 'one-time-income') && incomesList) incomesList.appendChild(row);
         else if (t.type === 'fixed-expense' && fixedExpensesList) fixedExpensesList.appendChild(row);
         else if (t.type === 'variable-expense' && variableExpensesList) variableExpensesList.appendChild(row);
     });
 }
-
-// מאזין גלובלי לכל הטבלאות (שים את זה מחוץ לכל פונקציה)
-document.addEventListener('click', function(e) {
-    if (e.target.dataset.action === 'delete') {
-        window.deleteTransaction(e.target.dataset.id);
-    } else if (e.target.dataset.action === 'edit') {
-        window.startInlineEdit(e.target.dataset.id);
-    }
-});
 
 function saveToLocalStorage() {
     localStorage.setItem('budget_app_monthly_v3', JSON.stringify(allMonthsData));
