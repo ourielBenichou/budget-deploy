@@ -233,12 +233,12 @@ function saveToLocalStorage() {
 
 async function saveTransactionToServer(transaction) {
     try {
-        const response = await fetch('https://budget-deploy2.onrender.com/api/transactions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(transaction)
-        });
-                
+    const response = await fetch('https://budget-deploy2.onrender.com/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transaction)
+    });
+            
         // כאן נדפיס את השגיאה האמיתית אם היא קיימת
         if (!response.ok) {
             const errorData = await response.json();
@@ -404,3 +404,27 @@ if (currentBankBalanceInput) {
 updateInterface();
 displayCurrentMonth();
 if (transactionTypeSelect) window.updateFormDateLabels();
+
+// פונקציה למשיכת נתונים מהשרת ועדכון האפליקציה
+async function fetchTransactionsFromServer() {
+    try {
+        const response = await fetch('https://budget-deploy2.onrender.com/api/transactions');
+        if (!response.ok) throw new Error('Failed to fetch');
+        
+        const serverTransactions = await response.json();
+        
+        // עדכון הנתונים בזיכרון המקומי עם מה שהגיע מהשרת
+        // נניח שכל הנתונים הולכים לחודש הנוכחי
+        const data = getSelectedMonthData();
+        data.transactions = serverTransactions; 
+        
+        // רענון התצוגה
+        updateInterface();
+        console.log('Data synced from server!');
+    } catch (err) {
+        console.error('Error syncing from server:', err);
+    }
+}
+
+// קריאה לפונקציה מיד עם טעינת הדף
+fetchTransactionsFromServer();
