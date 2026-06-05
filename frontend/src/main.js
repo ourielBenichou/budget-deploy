@@ -319,14 +319,21 @@ if (budgetForm) {
 
 
 window.deleteTransaction = async function(id) {
+    console.log("Attempting to delete ID:", id); // נבדוק בקונסול אם זה בכלל רץ
+    
     if (confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
         try {
-            // שליחת בקשת מחיקה לשרת
-            await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
+            const response = await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
                 method: 'DELETE'
             });
-            // עדכון התצוגה מיד לאחר המחיקה בשרת
-            await fetchTransactionsFromServer(); 
+            
+            if (response.ok) {
+                console.log("Deleted successfully from server");
+                // רענון הנתונים מהשרת מיד לאחר המחיקה
+                await fetchTransactionsFromServer();
+            } else {
+                console.error("Server failed to delete");
+            }
         } catch (err) {
             console.error('Error deleting:', err);
         }
