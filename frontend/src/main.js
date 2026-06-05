@@ -315,8 +315,11 @@ window.deleteTransaction = async function(id) {
 
             if (response.ok) {
                 await fetchTransactionsFromServer();
-            } else {
-                alert("שגיאה במחיקה: " + (result.message || "לא ידוע"));
+          } else {
+                // ננסה להוציא את הטקסט מהשרת בצורה טובה יותר
+                const errorText = await response.text(); 
+                console.error("Server Error:", errorText);
+                alert("שגיאה במחיקה: " + errorText);
             }
         } catch (err) {
             console.error('Network error:', err);
