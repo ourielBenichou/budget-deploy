@@ -196,14 +196,14 @@ function renderTables() {
         const displayNameText = t.description || t.name || 'ללא שם';
         
     row.innerHTML = `
-    <td><strong>${displayNameText}</strong></td>
-    <td>${t.day ? `ב-${t.day} לחודש` : '-'}</td>
-    <td>${t.amount.toLocaleString()} ₪</td>
-    <td class="actions-cell">
-        <button class="btn-edit" onclick="window.startInlineEdit('${t.id}')">ערוך</button>
-        <button class="btn-delete" onclick="window.deleteTransaction('${t.id}')">מחק</button>
-    </td>
-`;
+        <td><strong>${displayNameText}</strong></td>
+        <td>${t.day ? `ב-${t.day} לחודש` : '-'}</td>
+        <td>${t.amount.toLocaleString()} ₪</td>
+        <td class="actions-cell">
+            <button class="btn-edit" onclick="window.startInlineEdit('${t.id}')">ערוך</button>
+            <button class="btn-delete" onclick="window.deleteTransaction('${t.id}')">מחק</button>
+        </td>
+    `;
 
         if ((t.type === 'income' || t.type === 'one-time-income') && incomesList) incomesList.appendChild(row);
         else if (t.type === 'fixed-expense' && fixedExpensesList) fixedExpensesList.appendChild(row);
@@ -303,23 +303,22 @@ if (budgetForm) {
 
 
 window.deleteTransaction = async function(id) {
+    if (!id || id === 'undefined') {
+        console.error("Critical error: ID is undefined!");
+        return;
+    }
+    
     if (confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
         try {
-            console.log("Sending delete request for ID:", id);
             const response = await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
                 method: 'DELETE'
             });
             
-            const result = await response.json();
-            console.log("Server response:", result);
-
             if (response.ok) {
-                await fetchTransactionsFromServer();
-          } else {
-                // ננסה להוציא את הטקסט מהשרת בצורה טובה יותר
-                const errorText = await response.text(); 
-                console.error("Server Error:", errorText);
-                alert("שגיאה במחיקה: " + errorText);
+                await fetchTransactionsFromServer(); 
+            } else {
+                const errorData = await response.json();
+                alert("שגיאה במחיקה: " + errorData.error);
             }
         } catch (err) {
             console.error('Network error:', err);
