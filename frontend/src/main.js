@@ -184,56 +184,42 @@ function updateChart() {
 }
 
 function renderTables() {
-    if (incomesList) incomesList.innerHTML = '';
-    if (fixedExpensesList) fixedExpensesList.innerHTML = '';
-    if (variableExpensesList) variableExpensesList.innerHTML = '';
+    // איפוס הטבלאות
+    [incomesList, fixedExpensesList, variableExpensesList].forEach(el => {
+        if (el) el.innerHTML = '';
+    });
 
     const data = getSelectedMonthData();
 
     data.transactions.forEach(t => {
         const row = document.createElement('tr');
-        
-        // שימוש ב-description (או name לגיבוי)
         const displayNameText = t.description || t.name || 'ללא שם';
         
-        let displayName = displayNameText;
-        if (t.type === 'one-time-income') {
-            displayName = `${displayNameText} <span style="font-size: 0.75rem; background-color: #e2fbf5; color: #2ec4b6; padding: 2px 6px; border-radius: 4px; margin-right: 5px;">חד-פעמי</span>`;
-        }
-
-        let timeDisplay = '-';
-        if (t.type === 'income' || t.type === 'fixed-expense') {
-            timeDisplay = t.day ? `ב-${t.day} לחודש` : 'לא הוגדר יום';
-        } else if (t.type === 'variable-expense' && t.date) {
-            timeDisplay = new Date(t.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
-        }
-
         row.innerHTML = `
-            <td><strong>${displayName}</strong></td>
-            <td id="time-td-${t.id}">${timeDisplay}</td>
-            <td id="amount-td-${t.id}">${t.amount.toLocaleString()} ₪</td>
-            <td id="actions-td-${t.id}" class="actions-cell">
-                <button class="btn-edit" id="edit-btn-${t.id}">ערוך</button>
-                <button class="btn-delete" id="del-btn-${t.id}">מחק</button>
+            <td><strong>${displayNameText}</strong></td>
+            <td>${t.day ? `ב-${t.day} לחודש` : '-'}</td>
+            <td>${t.amount.toLocaleString()} ₪</td>
+            <td class="actions-cell">
+                <button class="btn-edit" data-id="${t.id}" data-action="edit">ערוך</button>
+                <button class="btn-delete" data-id="${t.id}" data-action="delete">מחק</button>
             </td>
         `;
 
-        // הוספת הקישור לכפתורים אחרי שהשורה נוספה לטבלה
-        if (incomesList || fixedExpensesList || variableExpensesList) {
-            // השורה הזו צריכה להופיע אחרי ה-appendChild שאתה כבר עושה
-            document.getElementById(`del-btn-${t.id}`).addEventListener('click', () => window.deleteTransaction(t.id));
-            document.getElementById(`edit-btn-${t.id}`).addEventListener('click', () => window.startInlineEdit(t.id));
-        }
-
-        if ((t.type === 'income' || t.type === 'one-time-income') && incomesList) {
-            incomesList.appendChild(row);
-        } else if (t.type === 'fixed-expense' && fixedExpensesList) {
-            fixedExpensesList.appendChild(row);
-        } else if (t.type === 'variable-expense' && variableExpensesList) {
-            variableExpensesList.appendChild(row);
-        }
+        if ((t.type === 'income' || t.type === 'one-time-income') && incomesList) incomesList.appendChild(row);
+        else if (t.type === 'fixed-expense' && fixedExpensesList) fixedExpensesList.appendChild(row);
+        else if (t.type === 'variable-expense' && variableExpensesList) variableExpensesList.appendChild(row);
     });
 }
+
+// מאזין גלובלי לכל הטבלאות (שים את זה מחוץ לכל פונקציה)
+document.addEventListener('click', function(e) {
+    if (e.target.dataset.action === 'delete') {
+        window.deleteTransaction(e.target.dataset.id);
+    } else if (e.target.dataset.action === 'edit') {
+        window.startInlineEdit(e.target.dataset.id);
+    }
+});
+
 function saveToLocalStorage() {
     localStorage.setItem('budget_app_monthly_v3', JSON.stringify(allMonthsData));
 }
