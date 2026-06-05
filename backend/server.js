@@ -40,8 +40,25 @@ app.get('/api/transactions', async (req, res) => {
 });
 // מחיקת רשומה
 app.delete('/api/transactions/:id', async (req, res) => {
-    await Transaction.findOneAndDelete({ id: req.params.id });
-    res.json({ message: "Deleted" });
+    try {
+        const transactionId = req.params.id;
+        console.log("Attempting to delete transaction with ID:", transactionId);
+
+        // ניסיון מחיקה לפי השדה id (כפי שאתה יוצר ב-main.js)
+        // או לפי _id (ה-ID האוטומטי של מונגו)
+        const result = await Transaction.findOneAndDelete({ 
+            $or: [{ id: transactionId }, { _id: transactionId }] 
+        });
+
+        if (!result) {
+            return res.status(404).json({ message: "Transaction not found" });
+        }
+
+        res.json({ message: "Deleted successfully" });
+    } catch (err) {
+        console.error("Server Error during delete:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // עדכון רשומה (עריכה)

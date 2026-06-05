@@ -314,14 +314,21 @@ if (budgetForm) {
 window.deleteTransaction = async function(id) {
     if (confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
         try {
-            // שליחת בקשת מחיקה לשרת
-            await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
+            console.log("Sending delete request for ID:", id);
+            const response = await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
                 method: 'DELETE'
             });
-            // עדכון התצוגה מיד לאחר המחיקה בשרת
-            await fetchTransactionsFromServer(); 
+            
+            const result = await response.json();
+            console.log("Server response:", result);
+
+            if (response.ok) {
+                await fetchTransactionsFromServer();
+            } else {
+                alert("שגיאה במחיקה: " + (result.message || "לא ידוע"));
+            }
         } catch (err) {
-            console.error('Error deleting:', err);
+            console.error('Network error:', err);
         }
     }
 };
