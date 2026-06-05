@@ -213,10 +213,17 @@ function renderTables() {
             <td id="time-td-${t.id}">${timeDisplay}</td>
             <td id="amount-td-${t.id}">${t.amount.toLocaleString()} ₪</td>
             <td id="actions-td-${t.id}" class="actions-cell">
-                <button class="btn-edit" onclick="startInlineEdit('${t.id}')">ערוך</button>
-                <button class="btn-delete" onclick="deleteTransaction('${t.id}')">מחק</button>
+                <button class="btn-edit" id="edit-btn-${t.id}">ערוך</button>
+                <button class="btn-delete" id="del-btn-${t.id}">מחק</button>
             </td>
         `;
+
+        // הוספת הקישור לכפתורים אחרי שהשורה נוספה לטבלה
+        if (incomesList || fixedExpensesList || variableExpensesList) {
+            // השורה הזו צריכה להופיע אחרי ה-appendChild שאתה כבר עושה
+            document.getElementById(`del-btn-${t.id}`).addEventListener('click', () => window.deleteTransaction(t.id));
+            document.getElementById(`edit-btn-${t.id}`).addEventListener('click', () => window.startInlineEdit(t.id));
+        }
 
         if ((t.type === 'income' || t.type === 'one-time-income') && incomesList) {
             incomesList.appendChild(row);
