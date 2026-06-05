@@ -318,11 +318,18 @@ if (budgetForm) {
 }
 
 
-window.deleteTransaction = function(id) {
+window.deleteTransaction = async function(id) {
     if (confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
-        const data = getSelectedMonthData();
-        data.transactions = data.transactions.filter(t => t.id !== id);
-        updateInterface();
+        try {
+            // שליחת בקשת מחיקה לשרת
+            await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
+                method: 'DELETE'
+            });
+            // עדכון התצוגה מיד לאחר המחיקה בשרת
+            await fetchTransactionsFromServer(); 
+        } catch (err) {
+            console.error('Error deleting:', err);
+        }
     }
 };
 
@@ -357,35 +364,27 @@ window.startInlineEdit = function(id) {
     `;
 };
 
-window.saveInlineEdit = function(id) {
-    const data = getSelectedMonthData();
-    const t = data.transactions.find(item => item.id === id);
-    if (!t) return;
-
+window.saveInlineEdit = async function(id) {
     const editAmountInput = document.getElementById(`edit-amount-${id}`);
     const newAmount = parseFloat(editAmountInput.value);
 
-    if (isNaN(newAmount) || newAmount < 0) {
-        alert('נא להזין סכום תקין');
-        return;
+    // הכנת האובייקט המעודכן
+    let updatedData = { amount: newAmount };
+    
+    // אם זה הכנסה/קבוע, נוסיף גם את היום
+    const editDayInput = document.getElementById(`edit-day-${id}`);
+    if (editDayInput) updatedData.day = parseInt(editDayInput.value);
+
+    try {
+        await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+        await fetchTransactionsFromServer(); // רענון מהשרת
+    } catch (err) {
+        console.error('Error updating:', err);
     }
-
-    t.amount = newAmount;
-
-    if (t.type === 'income' || t.type === 'fixed-expense') {
-        const editDayInput = document.getElementById(`edit-day-${id}`);
-        const newDay = parseInt(editDayInput.value);
-        if (!isNaN(newDay) && newDay >= 1 && newDay <= 31) {
-            t.day = newDay;
-        }
-    } else if (t.type === 'variable-expense') {
-        const editDateInput = document.getElementById(`edit-date-${id}`);
-        if (editDateInput.value) {
-            t.date = editDateInput.value;
-        }
-    }
-
-    updateInterface();
 };
 
 function displayCurrentMonth() {
