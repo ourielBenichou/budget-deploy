@@ -319,21 +319,14 @@ if (budgetForm) {
 
 
 window.deleteTransaction = async function(id) {
-    console.log("Attempting to delete ID:", id); // נבדוק בקונסול אם זה בכלל רץ
-    
     if (confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
         try {
-            const response = await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
+            // שליחת בקשת מחיקה לשרת
+            await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
                 method: 'DELETE'
             });
-            
-            if (response.ok) {
-                console.log("Deleted successfully from server");
-                // רענון הנתונים מהשרת מיד לאחר המחיקה
-                await fetchTransactionsFromServer();
-            } else {
-                console.error("Server failed to delete");
-            }
+            // עדכון התצוגה מיד לאחר המחיקה בשרת
+            await fetchTransactionsFromServer(); 
         } catch (err) {
             console.error('Error deleting:', err);
         }
@@ -419,20 +412,19 @@ async function fetchTransactionsFromServer() {
         
         const serverTransactions = await response.json();
         
-        // עדכון הנתונים בזיכרון המקומי עם מה שהגיע מהשרת
-        // נניח שכל הנתונים הולכים לחודש הנוכחי
+        // עדכון הנתונים בזיכרון המקומי
         const data = getSelectedMonthData();
         data.transactions = serverTransactions; 
         
         // רענון התצוגה
         updateInterface();
-        console.log('Data synced from server!');
     } catch (err) {
         console.error('Error syncing from server:', err);
     }
 }
 
-// קריאה לפונקציה מיד עם טעינת הדף
-setInterval(() => {
-    fetchTransactionsFromServer();
-}, 5000);
+// הרצה ראשונית
+fetchTransactionsFromServer();
+
+// עדכון אוטומטי כל 5 שניות
+setInterval(fetchTransactionsFromServer, 5000);
