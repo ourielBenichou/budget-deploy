@@ -1,0 +1,8 @@
+{
+  "name": "budget-deploy",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "postinstall": "npm --prefix backend install"
+  }
+}

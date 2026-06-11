@@ -1,5 +1,7 @@
 // קביעת החודש הנוכחי כברירת מחדל בפורמט YYYY-MM (לדוגמה: 2026-05)
-const API_BASE = 'https://budget-deploy2.onrender.com/api';
+const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000/api'
+    : `${window.location.origin}/api`;
 const now = new Date();
 const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 let selectedMonth = currentMonthKey;

@@ -1,24 +1,47 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Transaction from './models/Transaction.js';
 import MonthSettings from './models/MonthSettings.js';
 
 import 'dotenv/config';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendPath = path.join(__dirname, '../frontend');
+const APP_VERSION = '2026-06-12-month-sync';
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// התחברות ל-DB (הקוד שכבר יש לך)
-
 mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 5000 // ינסה להתחבר רק ל-5 שניות
+  serverSelectionTimeoutMS: 5000
 })
-    .then(() => console.log('✅ Connected to MongoDB successfully!'))
+    .then(async () => {
+        console.log('✅ Connected to MongoDB successfully!');
+        await migrateLegacyTransactions();
+    })
     .catch((err) => console.error('❌ MongoDB connection error:', err));
-console.log("Attempting to connect to MongoDB...");
+console.log('Attempting to connect to MongoDB...');
+
+async function migrateLegacyTransactions() {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const result = await Transaction.updateMany(
+        { $or: [{ month: { $exists: false } }, { month: null }, { month: '' }] },
+        { $set: { month: currentMonth } }
+    );
+    if (result.modifiedCount > 0) {
+        console.log(`Migrated ${result.modifiedCount} legacy transactions to ${currentMonth}`);
+    }
+}
+
+app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, version: APP_VERSION });
+});
 
 // נתיב להוספת הוצאה/הכנסה חדשה
 app.post('/api/transactions', async (req, res) => {
@@ -113,4 +136,14 @@ app.put('/api/transactions/:id', async (req, res) => {
     }
 });
 
-app.listen(5000, () => console.log('Server is running on port 5000'));
+app.use(express.static(frontendPath));
+
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server is running on port ${PORT} (${APP_VERSION})`));
