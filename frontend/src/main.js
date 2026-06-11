@@ -440,15 +440,9 @@ function displayCurrentMonth() {
 
 // הרצה וביצוע אתחול ראשוני
 populateMonthSelector();
-const initialData = getSelectedMonthData();
-if (currentBankBalanceInput) {
-    currentBankBalanceInput.value = initialData.bankBalance;
-}
-updateInterface();
 displayCurrentMonth();
 if (transactionTypeSelect) window.updateFormDateLabels();
 
-// פונקציה למשיכת נתונים מהשרת ועדכון האפליקציה
 async function fetchMonthDataFromServer() {
     try {
         const [txResponse, monthResponse] = await Promise.all([
@@ -469,10 +463,15 @@ async function fetchMonthDataFromServer() {
         if (monthResponse.ok) {
             const monthData = await monthResponse.json();
             const data = getSelectedMonthData();
-            data.bankBalance = monthData.bankBalance ?? 5000;
 
-            if (currentBankBalanceInput && document.activeElement !== currentBankBalanceInput) {
-                currentBankBalanceInput.value = data.bankBalance;
+            if (monthData.exists === false && data.bankBalance !== 5000) {
+                await saveBankBalanceToServer();
+            } else {
+                data.bankBalance = monthData.bankBalance ?? 5000;
+
+                if (currentBankBalanceInput && document.activeElement !== currentBankBalanceInput) {
+                    currentBankBalanceInput.value = data.bankBalance;
+                }
             }
         }
 

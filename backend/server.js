@@ -11,7 +11,7 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-12-month-sync';
+const APP_VERSION = '2026-06-12-sync-v2';
 
 const app = express();
 app.use(cors());
@@ -70,7 +70,16 @@ app.get('/api/transactions', async (req, res) => {
 app.get('/api/months/:month', async (req, res) => {
     try {
         const settings = await MonthSettings.findOne({ month: req.params.month });
-        res.json(settings || { month: req.params.month, bankBalance: 5000 });
+        if (settings) {
+            res.json({
+                month: settings.month,
+                bankBalance: settings.bankBalance,
+                exists: true
+            });
+            return;
+        }
+
+        res.json({ month: req.params.month, bankBalance: 5000, exists: false });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -134,6 +143,13 @@ app.put('/api/transactions/:id', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+app.use((req, res, next) => {
+    if (req.path.endsWith('.js') || req.path.endsWith('.html')) {
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+    next();
 });
 
 app.use(express.static(frontendPath));
