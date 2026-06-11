@@ -1,9 +1,11 @@
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
-    description: { type: String, required: true }, // וודא שזה כתוב description
+    id: { type: String, required: true, unique: true },
+    description: { type: String, required: true },
     amount: { type: Number, required: true },
     type: { type: String, required: true },
+    month: { type: String },
     day: Number,
     date: String
 });

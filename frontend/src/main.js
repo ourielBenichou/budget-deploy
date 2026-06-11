@@ -1,4 +1,5 @@
 // קביעת החודש הנוכחי כברירת מחדל בפורמט YYYY-MM (לדוגמה: 2026-05)
+const API_BASE = 'https://budget-deploy2.onrender.com/api';
 const now = new Date();
 const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 let selectedMonth = currentMonthKey;
@@ -50,6 +51,11 @@ const totalIncomeEl = document.getElementById('total-income');
 const totalExpensesEl = document.getElementById('total-expenses');
 
 let trendChartInstance = null;
+let bankBalanceSaveTimeout = null;
+
+function getTransactionId(t) {
+    return t.id || String(t._id);
+}
 
 // האזנה לשינוי יתרת הבנק
 if (currentBankBalanceInput) {
@@ -57,6 +63,9 @@ if (currentBankBalanceInput) {
         const data = getSelectedMonthData();
         data.bankBalance = parseFloat(currentBankBalanceInput.value) || 0;
         updateInterface();
+
+        clearTimeout(bankBalanceSaveTimeout);
+        bankBalanceSaveTimeout = setTimeout(saveBankBalanceToServer, 500);
     });
 }
 
@@ -95,7 +104,7 @@ window.changeMonth = function() {
         currentBankBalanceInput.value = data.bankBalance;
     }
     
-    updateInterface();
+    fetchMonthDataFromServer();
 };
 
 function updateSummary() {
@@ -194,14 +203,16 @@ function renderTables() {
     data.transactions.forEach(t => {
         const row = document.createElement('tr');
         const displayNameText = t.description || t.name || 'ללא שם';
-        
+        const txId = getTransactionId(t);
+        const timeDisplay = t.day ? `ב-${t.day} לחודש` : (t.date || '-');
+
     row.innerHTML = `
         <td><strong>${displayNameText}</strong></td>
-        <td>${t.day ? `ב-${t.day} לחודש` : '-'}</td>
-        <td>${t.amount.toLocaleString()} ₪</td>
-        <td class="actions-cell">
-            <button class="btn-edit" onclick="window.startInlineEdit('${t.id}')">ערוך</button>
-            <button class="btn-delete" onclick="window.deleteTransaction('${t.id}')">מחק</button>
+        <td id="time-td-${txId}">${timeDisplay}</td>
+        <td id="amount-td-${txId}">${t.amount.toLocaleString()} ₪</td>
+        <td id="actions-td-${txId}" class="actions-cell">
+            <button class="btn-edit" onclick="window.startInlineEdit('${txId}')">ערוך</button>
+            <button class="btn-delete" onclick="window.deleteTransaction('${txId}')">מחק</button>
         </td>
     `;
 
@@ -217,10 +228,10 @@ function saveToLocalStorage() {
 
 async function saveTransactionToServer(transaction) {
     try {
-    const response = await fetch('https://budget-deploy2.onrender.com/api/transactions', {
+    const response = await fetch(`${API_BASE}/transactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(transaction)
+        body: JSON.stringify({ ...transaction, month: selectedMonth })
     });
             
         // כאן נדפיס את השגיאה האמיתית אם היא קיימת
@@ -235,7 +246,24 @@ async function saveTransactionToServer(transaction) {
     }
 }
 
-function updateInterface() {
+async function saveBankBalanceToServer() {
+    try {
+        const data = getSelectedMonthData();
+        const response = await fetch(`${API_BASE}/months/${selectedMonth}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bankBalance: data.bankBalance })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save bank balance');
+        }
+    } catch (err) {
+        console.error('Error saving bank balance to server:', err);
+    }
+}
+
+window.updateInterface = function updateInterface() {
     updateSummary();
     renderTables();
     saveToLocalStorage();
@@ -280,9 +308,10 @@ if (budgetForm) {
 
         const newTransaction = {
             id: Date.now().toString(),
-            description: description, // שינינו ל-description
+            description: description,
             amount: amount,
             type: type,
+            month: selectedMonth,
             day: (type === 'income' || type === 'fixed-expense') ? parseInt(timeValue) || new Date().getDate() : null,
             date: type === 'variable-expense' ? timeValue : null
         };
@@ -307,33 +336,37 @@ window.deleteTransaction = async function(id) {
         console.error("Critical error: ID is undefined!");
         return;
     }
-    
-    if (confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
-        try {
-            const response = await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
-                method: 'DELETE'
-            });
-            
-            if (response.ok) {
-                await fetchTransactionsFromServer(); 
-            } else {
-                const errorData = await response.json();
-                alert("שגיאה במחיקה: " + errorData.error);
-            }
-        } catch (err) {
-            console.error('Network error:', err);
+
+    if (!confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) return;
+
+    const data = getSelectedMonthData();
+    data.transactions = data.transactions.filter(t => getTransactionId(t) !== id);
+    updateInterface();
+
+    try {
+        const response = await fetch(`${API_BASE}/transactions/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.warn("Server delete failed:", errorData);
         }
+    } catch (err) {
+        console.error('Network error:', err);
     }
 };
 
 window.startInlineEdit = function(id) {
     const data = getSelectedMonthData();
-    const t = data.transactions.find(item => item.id === id);
+    const t = data.transactions.find(item => getTransactionId(item) === id);
     if (!t) return;
 
     const timeTd = document.getElementById(`time-td-${id}`);
     const amountTd = document.getElementById(`amount-td-${id}`);
     const actionsTd = document.getElementById(`actions-td-${id}`);
+
+    if (!timeTd || !amountTd || !actionsTd) return;
 
     if (t.type === 'income' || t.type === 'fixed-expense') {
         timeTd.innerHTML = `
@@ -352,8 +385,8 @@ window.startInlineEdit = function(id) {
     `;
 
     actionsTd.innerHTML = `
-        <button class="btn-save" onclick="saveInlineEdit('${id}')" style="background-color: #2ec4b6; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-left: 4px;">שמור</button>
-        <button class="btn-delete" onclick="updateInterface()" style="background-color: #777; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">ביטול</button>
+        <button class="btn-save" onclick="window.saveInlineEdit('${id}')" style="background-color: #2ec4b6; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-left: 4px;">שמור</button>
+        <button class="btn-delete" onclick="window.updateInterface()" style="background-color: #777; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">ביטול</button>
     `;
 };
 
@@ -361,20 +394,36 @@ window.saveInlineEdit = async function(id) {
     const editAmountInput = document.getElementById(`edit-amount-${id}`);
     const newAmount = parseFloat(editAmountInput.value);
 
-    // הכנת האובייקט המעודכן
-    let updatedData = { amount: newAmount };
-    
-    // אם זה הכנסה/קבוע, נוסיף גם את היום
+    if (isNaN(newAmount) || newAmount < 0) return;
+
+    const data = getSelectedMonthData();
+    const t = data.transactions.find(item => getTransactionId(item) === id);
+    if (!t) return;
+
+    t.amount = newAmount;
+
     const editDayInput = document.getElementById(`edit-day-${id}`);
-    if (editDayInput) updatedData.day = parseInt(editDayInput.value);
+    if (editDayInput) t.day = parseInt(editDayInput.value);
+
+    const editDateInput = document.getElementById(`edit-date-${id}`);
+    if (editDateInput) t.date = editDateInput.value;
+
+    updateInterface();
+
+    const updatedData = { amount: t.amount };
+    if (t.day != null) updatedData.day = t.day;
+    if (t.date != null) updatedData.date = t.date;
 
     try {
-        await fetch(`https://budget-deploy2.onrender.com/api/transactions/${id}`, {
+        const response = await fetch(`${API_BASE}/transactions/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedData)
         });
-        await fetchTransactionsFromServer(); // רענון מהשרת
+
+        if (!response.ok) {
+            console.warn('Server update failed');
+        }
     } catch (err) {
         console.error('Error updating:', err);
     }
@@ -398,26 +447,38 @@ displayCurrentMonth();
 if (transactionTypeSelect) window.updateFormDateLabels();
 
 // פונקציה למשיכת נתונים מהשרת ועדכון האפליקציה
-async function fetchTransactionsFromServer() {
+async function fetchMonthDataFromServer() {
     try {
-        const response = await fetch('https://budget-deploy2.onrender.com/api/transactions');
-        if (!response.ok) throw new Error('Failed to fetch');
-        
-        const serverTransactions = await response.json();
-        
-        // עדכון הנתונים בזיכרון המקומי
-        const data = getSelectedMonthData();
-        data.transactions = serverTransactions; 
-        
-        // רענון התצוגה
+        const [txResponse, monthResponse] = await Promise.all([
+            fetch(`${API_BASE}/transactions?month=${selectedMonth}`),
+            fetch(`${API_BASE}/months/${selectedMonth}`)
+        ]);
+
+        if (txResponse.ok) {
+            const serverTransactions = await txResponse.json();
+            serverTransactions.forEach(t => {
+                if (!t.id && t._id) t.id = String(t._id);
+            });
+
+            const data = getSelectedMonthData();
+            data.transactions = serverTransactions;
+        }
+
+        if (monthResponse.ok) {
+            const monthData = await monthResponse.json();
+            const data = getSelectedMonthData();
+            data.bankBalance = monthData.bankBalance ?? 5000;
+
+            if (currentBankBalanceInput && document.activeElement !== currentBankBalanceInput) {
+                currentBankBalanceInput.value = data.bankBalance;
+            }
+        }
+
         updateInterface();
     } catch (err) {
         console.error('Error syncing from server:', err);
     }
 }
 
-// הרצה ראשונית
-fetchTransactionsFromServer();
-
-// עדכון אוטומטי כל 5 שניות
-setInterval(fetchTransactionsFromServer, 5000);
+fetchMonthDataFromServer();
+setInterval(fetchMonthDataFromServer, 5000);
