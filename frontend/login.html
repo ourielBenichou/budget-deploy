@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסה - ניהול תקציב</title>
+    <style>
+        :root {
+            --primary: #2ec4b6;
+            --primary-dark: #24a195;
+            --danger: #e71d36;
+            --text-dark: #333333;
+            --text-muted: #888888;
+            --bg-main: #f4f6f9;
+            --border-color: #e1e4e8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f4f6f9 0%, #e2fbf5 100%);
+            color: var(--text-dark);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            width: 100%;
+            max-width: 420px;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        .divider {
+            text-align: center;
+            margin: 22px 0;
+            color: var(--text-muted);
+            font-size: 13px;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider::before { right: 0; }
+        .divider::after { left: 0; }
+
+        #google-btn {
+            display: flex;
+            justify-content: center;
+            min-height: 44px;
+        }
+
+        .toggle-mode {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .toggle-mode button {
+            background: none;
+            border: none;
+            color: var(--primary-dark);
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0;
+        }
+
+        .error-msg {
+            background: #fde8ea;
+            color: var(--danger);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .register-fields { display: none; }
+        body.register-mode .register-fields { display: block; }
+        body.register-mode .login-fields { display: none; }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="login-card">
+        <h1>ניהול תקציב</h1>
+        <p class="subtitle" id="form-subtitle">התחבר לאזור האישי שלך</p>
+
+        <div id="error-msg" class="error-msg"></div>
+
+        <form id="auth-form">
+            <div class="form-group register-fields">
+                <label for="register-username">שם משתמש</label>
+                <input type="text" id="register-username" autocomplete="username">
+            </div>
+
+            <div class="form-group login-fields">
+                <label for="login-username" id="username-label">שם משתמש או אימייל</label>
+                <input type="text" id="login-username" required autocomplete="username">
+            </div>
+
+            <div class="form-group register-fields">
+                <label for="register-email">אימייל</label>
+                <input type="email" id="register-email" autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label for="login-password">סיסמה</label>
+                <input type="password" id="login-password" required autocomplete="current-password" minlength="6">
+            </div>
+
+            <button type="submit" class="btn-primary" id="submit-btn">התחבר</button>
+        </form>
+
+        <div class="divider">או</div>
+        <div id="google-btn"></div>
+
+        <div class="toggle-mode">
+            <span id="toggle-text">אין לך חשבון?</span>
+            <button type="button" id="toggle-mode-btn">הירשם כאן</button>
+        </div>
+    </div>
+
+    <script type="module" src="./src/login.js?v=1"></script>
+</body>
+</html>

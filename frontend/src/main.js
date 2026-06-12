@@ -1,13 +1,24 @@
-// קביעת החודש הנוכחי כברירת מחדל בפורמט YYYY-MM (לדוגמה: 2026-05)
-const API_BASE = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000/api'
-    : `${window.location.origin}/api`;
+import {
+    getApiBase,
+    requireAuth,
+    authHeaders,
+    handleAuthError,
+    getStorageKey,
+    getAuthUser,
+    clearAuth
+} from './auth.js';
+
+if (!requireAuth()) {
+    throw new Error('Not authenticated');
+}
+
+const API_BASE = getApiBase();
+const STORAGE_KEY = getStorageKey('budget_app_monthly_v3');
 const now = new Date();
 const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 let selectedMonth = currentMonthKey;
 
-// שליפת מבנה הנתונים השלם מחולק לפי חודשים
-let allMonthsData = JSON.parse(localStorage.getItem('budget_app_monthly_v3')) || {};
+let allMonthsData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
 
 // מנגנון הגנה: הגירה של נתונים ישנים מהגרסה הקודמת (כדי שלא תאבד כלום)
 if (Object.keys(allMonthsData).length === 0) {
@@ -225,14 +236,25 @@ function renderTables() {
 }
 
 function saveToLocalStorage() {
-    localStorage.setItem('budget_app_monthly_v3', JSON.stringify(allMonthsData));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allMonthsData));
+}
+
+async function apiFetch(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: authHeaders({
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        })
+    });
+    handleAuthError(response);
+    return response;
 }
 
 async function saveTransactionToServer(transaction) {
     try {
-    const response = await fetch(`${API_BASE}/transactions`, {
+    const response = await apiFetch(`${API_BASE}/transactions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...transaction, month: selectedMonth })
     });
             
@@ -251,9 +273,8 @@ async function saveTransactionToServer(transaction) {
 async function saveBankBalanceToServer() {
     try {
         const data = getSelectedMonthData();
-        const response = await fetch(`${API_BASE}/months/${selectedMonth}`, {
+        const response = await apiFetch(`${API_BASE}/months/${selectedMonth}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ bankBalance: data.bankBalance })
         });
 
@@ -346,7 +367,7 @@ window.deleteTransaction = async function(id) {
     updateInterface();
 
     try {
-        const response = await fetch(`${API_BASE}/transactions/${id}`, {
+        const response = await apiFetch(`${API_BASE}/transactions/${id}`, {
             method: 'DELETE'
         });
 
@@ -417,9 +438,8 @@ window.saveInlineEdit = async function(id) {
     if (t.date != null) updatedData.date = t.date;
 
     try {
-        const response = await fetch(`${API_BASE}/transactions/${id}`, {
+        const response = await apiFetch(`${API_BASE}/transactions/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedData)
         });
 
@@ -446,8 +466,8 @@ if (transactionTypeSelect) window.updateFormDateLabels();
 async function fetchMonthDataFromServer() {
     try {
         const [txResponse, monthResponse] = await Promise.all([
-            fetch(`${API_BASE}/transactions?month=${selectedMonth}`),
-            fetch(`${API_BASE}/months/${selectedMonth}`)
+            apiFetch(`${API_BASE}/transactions?month=${selectedMonth}`),
+            apiFetch(`${API_BASE}/months/${selectedMonth}`)
         ]);
 
         if (txResponse.ok) {
@@ -483,3 +503,14 @@ async function fetchMonthDataFromServer() {
 
 fetchMonthDataFromServer();
 setInterval(fetchMonthDataFromServer, 5000);
+
+const authUser = getAuthUser();
+const greeting = document.getElementById('user-greeting');
+if (greeting && authUser?.displayName) {
+    greeting.textContent = `שלום, ${authUser.displayName}`;
+}
+
+document.getElementById('logout-btn')?.addEventListener('click', () => {
+    clearAuth();
+    window.location.href = '/login.html';
+});
