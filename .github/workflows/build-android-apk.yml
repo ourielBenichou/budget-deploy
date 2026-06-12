@@ -29,6 +29,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
@@ -38,11 +41,12 @@ jobs:
         run: |
           npm run build:mobile
           npx cap add android
+          npm run cap:assets || true
           npx cap sync android
 
       - name: Build APK
         working-directory: frontend/android
-        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Copy APK for website download
         run: |
