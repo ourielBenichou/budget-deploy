@@ -116,7 +116,7 @@
             קובץ ההורדה עדיין נבנה. נסה שוב בעוד כמה דקות.
         </div>
 
-        <a id="download-btn" href="/downloads/budget-app.apk" class="btn-download" download>
+        <a id="download-btn" href="/downloads/budget-app.apk" class="btn-download" download="budget-app.apk">
             הורד ל-Android (APK)
         </a>
 
@@ -134,17 +134,34 @@
     </div>
 
     <script>
-        fetch('/downloads/budget-app.apk', { method: 'HEAD' })
-            .then((response) => {
-                if (!response.ok) {
-                    document.getElementById('unavailable-msg').style.display = 'block';
-                    document.getElementById('download-btn').style.opacity = '0.5';
-                    document.getElementById('download-btn').style.pointerEvents = 'none';
+        const APK_LOCAL = '/downloads/budget-app.apk';
+        const APK_FALLBACK = 'https://raw.githubusercontent.com/ourielBenichou/budget-deploy/main/frontend/downloads/budget-app.apk';
+        const downloadBtn = document.getElementById('download-btn');
+        const unavailableMsg = document.getElementById('unavailable-msg');
+
+        async function resolveDownloadUrl() {
+            try {
+                const local = await fetch(APK_LOCAL, { method: 'HEAD' });
+                if (local.ok) {
+                    downloadBtn.href = APK_LOCAL;
+                    return;
                 }
-            })
-            .catch(() => {
-                document.getElementById('unavailable-msg').style.display = 'block';
-            });
+            } catch {}
+
+            try {
+                const remote = await fetch(APK_FALLBACK, { method: 'HEAD' });
+                if (remote.ok) {
+                    downloadBtn.href = APK_FALLBACK;
+                    return;
+                }
+            } catch {}
+
+            unavailableMsg.style.display = 'block';
+            downloadBtn.style.opacity = '0.5';
+            downloadBtn.style.pointerEvents = 'none';
+        }
+
+        resolveDownloadUrl();
     </script>
 </body>
 </html>
