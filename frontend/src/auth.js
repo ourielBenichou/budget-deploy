@@ -56,3 +56,7 @@ export function getStorageKey(baseKey) {
     const user = getAuthUser();
     return user?.id ? `${baseKey}_${user.id}` : baseKey;
 }
+
+export function isAdmin() {
+    return getAuthUser()?.role === 'admin';
+}

@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
-import { createToken, publicUser, requireAuth } from '../middleware/auth.js';
+import { createToken, publicUser, requireAuth, applyAdminEmailRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -35,6 +35,8 @@ router.post('/register', async (req, res) => {
             displayName: username.trim()
         });
 
+        await applyAdminEmailRole(user);
+
         res.status(201).json({ token: createToken(user), user: publicUser(user) });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -61,6 +63,8 @@ router.post('/login', async (req, res) => {
         if (!valid) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
+
+        await applyAdminEmailRole(user);
 
         res.json({ token: createToken(user), user: publicUser(user) });
     } catch (err) {
@@ -106,6 +110,8 @@ router.post('/google', async (req, res) => {
             await user.save();
         }
 
+        await applyAdminEmailRole(user);
+
         res.json({ token: createToken(user), user: publicUser(user) });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -118,6 +124,8 @@ router.get('/me', requireAuth, async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: 'User not found' });
         }
+
+        await applyAdminEmailRole(user);
         res.json({ user: publicUser(user) });
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -5,7 +5,9 @@ import {
     handleAuthError,
     getStorageKey,
     getAuthUser,
-    clearAuth
+    clearAuth,
+    setAuth,
+    getToken
 } from './auth.js';
 
 if (!requireAuth()) {
@@ -504,11 +506,29 @@ async function fetchMonthDataFromServer() {
 fetchMonthDataFromServer();
 setInterval(fetchMonthDataFromServer, 5000);
 
-const authUser = getAuthUser();
-const greeting = document.getElementById('user-greeting');
-if (greeting && authUser?.displayName) {
-    greeting.textContent = `שלום, ${authUser.displayName}`;
+async function refreshAuthUser() {
+    try {
+        const response = await apiFetch(`${API_BASE}/auth/me`);
+        if (response.ok) {
+            const data = await response.json();
+            setAuth(getToken(), data.user);
+            return data.user;
+        }
+    } catch {
+        return getAuthUser();
+    }
+    return getAuthUser();
 }
+
+refreshAuthUser().then((user) => {
+    const greeting = document.getElementById('user-greeting');
+    if (greeting && user?.displayName) {
+        greeting.textContent = `שלום, ${user.displayName}`;
+    }
+    if (user?.role === 'admin') {
+        document.getElementById('admin-link')?.style.setProperty('display', 'inline-block');
+    }
+});
 
 document.getElementById('logout-btn')?.addEventListener('click', () => {
     clearAuth();

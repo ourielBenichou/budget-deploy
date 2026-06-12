@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import Transaction from './models/Transaction.js';
 import MonthSettings from './models/MonthSettings.js';
 import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
+import User from './models/User.js';
 import { requireAuth } from './middleware/auth.js';
 
 import 'dotenv/config';
@@ -13,7 +15,7 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-12-auth-v1';
+const APP_VERSION = '2026-06-12-admin-v1';
 
 const app = express();
 app.use(cors());
@@ -22,15 +24,33 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 5000
 })
-    .then(() => console.log('✅ Connected to MongoDB successfully!'))
+    .then(async () => {
+        console.log('✅ Connected to MongoDB successfully!');
+        await bootstrapAdminUser();
+    })
     .catch((err) => console.error('❌ MongoDB connection error:', err));
 console.log('Attempting to connect to MongoDB...');
+
+async function bootstrapAdminUser() {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    if (!adminEmail) return;
+
+    const result = await User.updateMany(
+        { email: adminEmail },
+        { $set: { role: 'admin' } }
+    );
+
+    if (result.modifiedCount > 0) {
+        console.log(`Granted admin role to ${adminEmail}`);
+    }
+}
 
 app.get('/api/health', (_req, res) => {
     res.json({ ok: true, version: APP_VERSION });
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.post('/api/transactions', requireAuth, async (req, res) => {
     try {
@@ -169,12 +189,19 @@ app.get('/app', (_req, res) => {
     res.sendFile(path.join(frontendPath, 'app.html'));
 });
 
+app.get('/admin', (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'admin.html'));
+});
+
 app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
         return next();
     }
     if (req.path === '/app.html') {
         return res.sendFile(path.join(frontendPath, 'app.html'));
+    }
+    if (req.path === '/admin.html') {
+        return res.sendFile(path.join(frontendPath, 'admin.html'));
     }
     next();
 });

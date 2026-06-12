@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול משתמשים</title>
+    <script>
+        if (!localStorage.getItem('auth_token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #2ec4b6;
+            --primary-dark: #24a195;
+            --danger: #e71d36;
+            --text-dark: #333333;
+            --text-muted: #888888;
+            --bg-main: #f4f6f9;
+            --border-color: #e1e4e8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background: #f0f2f5;
+            color: #4a5568;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+
+        .error-msg {
+            display: none;
+            background: #fde8ea;
+            color: var(--danger);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .success-msg {
+            display: none;
+            background: #e2fbf5;
+            color: #13786f;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f0f2f5;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .role-admin {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .role-user {
+            background: #e6f0fa;
+            color: #2563a8;
+        }
+
+        .edit-form {
+            display: grid;
+            gap: 8px;
+            min-width: 180px;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: #fde8ea;
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <h1>ניהול משתמשים</h1>
+            <div class="actions">
+                <a href="/app.html" class="btn btn-secondary">חזרה לאפליקציה</a>
+                <button type="button" id="refresh-btn" class="btn btn-secondary">רענן</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="error-msg" class="error-msg"></div>
+            <div id="success-msg" class="success-msg"></div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>שם תצוגה</th>
+                            <th>שם משתמש</th>
+                            <th>אימייל</th>
+                            <th>תפקיד</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-list">
+                        <tr><td colspan="5">טוען...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/admin.js?v=1"></script>
+</body>
+</html>
