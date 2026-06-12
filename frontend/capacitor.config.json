@@ -1,0 +1,22 @@
+{
+  "appId": "com.budgetdeploy.app",
+  "appName": "ניהול תקציב",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 2000,
+      "backgroundColor": "#f4f6f9",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#2ec4b6"
+    }
+  }
+}

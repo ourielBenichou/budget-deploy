@@ -2,7 +2,13 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2ec4b6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="ניהול תקציב">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/resources/icon.png">
     <title>ניהול תקציב ותזרים מזומנים חכם</title>
     <script>
         if (!localStorage.getItem('auth_token')) {
@@ -449,6 +455,7 @@
         </section>
     </main>
 
+    <script type="module" src="./src/mobile.js"></script>
     <script type="module" src="./src/main.js?v=4"></script>
 </body>
 </html>

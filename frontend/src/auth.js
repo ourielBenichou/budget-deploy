@@ -1,7 +1,17 @@
+export const PRODUCTION_API = 'https://budget-deploy2.onrender.com/api';
+
+export function isNativeApp() {
+    return window.Capacitor?.isNativePlatform?.() === true;
+}
+
 export function getApiBase() {
-    return window.location.hostname === 'localhost'
-        ? 'http://localhost:5000/api'
-        : `${window.location.origin}/api`;
+    if (isNativeApp()) {
+        return PRODUCTION_API;
+    }
+    if (window.location.hostname === 'localhost') {
+        return 'http://localhost:5000/api';
+    }
+    return `${window.location.origin}/api`;
 }
 
 export function getToken() {
