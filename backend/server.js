@@ -15,7 +15,7 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-12-mobile-v1';
+const APP_VERSION = '2026-06-12-apk-download-v1';
 
 const app = express();
 app.use(cors());
@@ -179,7 +179,14 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(frontendPath));
+app.use(express.static(frontendPath, {
+    setHeaders(res, filePath) {
+        if (filePath.endsWith('.apk')) {
+            res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+            res.setHeader('Content-Disposition', 'attachment; filename="budget-app.apk"');
+        }
+    }
+}));
 
 app.get('/', (_req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
@@ -193,6 +200,10 @@ app.get('/admin', (_req, res) => {
     res.sendFile(path.join(frontendPath, 'admin.html'));
 });
 
+app.get('/download', (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'download.html'));
+});
+
 app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
         return next();
@@ -202,6 +213,9 @@ app.get('*', (req, res, next) => {
     }
     if (req.path === '/admin.html') {
         return res.sendFile(path.join(frontendPath, 'admin.html'));
+    }
+    if (req.path === '/download.html') {
+        return res.sendFile(path.join(frontendPath, 'download.html'));
     }
     next();
 });

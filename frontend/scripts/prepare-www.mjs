@@ -28,7 +28,7 @@ if (fs.existsSync(www)) {
 
 fs.mkdirSync(www, { recursive: true });
 
-for (const file of ['index.html', 'login.html', 'app.html', 'admin.html', 'privacy.html', 'manifest.json']) {
+for (const file of ['index.html', 'login.html', 'app.html', 'admin.html', 'privacy.html', 'download.html', 'manifest.json']) {
     const source = path.join(root, file);
     if (fs.existsSync(source)) {
         fs.copyFileSync(source, path.join(www, file));
@@ -38,5 +38,6 @@ for (const file of ['index.html', 'login.html', 'app.html', 'admin.html', 'priva
 copyRecursive(path.join(root, 'src'), path.join(www, 'src'));
 copyRecursive(path.join(root, 'resources'), path.join(www, 'resources'));
 copyRecursive(path.join(root, 'public'), path.join(www, 'public'));
+copyRecursive(path.join(root, 'downloads'), path.join(www, 'downloads'));
 
 console.log('Mobile web assets prepared in www/');
