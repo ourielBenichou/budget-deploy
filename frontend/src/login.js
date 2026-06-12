@@ -7,6 +7,7 @@ if (localStorage.getItem('auth_token')) {
 const API_BASE = getApiBase();
 const authForm = document.getElementById('auth-form');
 const errorMsg = document.getElementById('error-msg');
+const successMsg = document.getElementById('success-msg');
 const toggleModeBtn = document.getElementById('toggle-mode-btn');
 const toggleText = document.getElementById('toggle-text');
 const formSubtitle = document.getElementById('form-subtitle');
@@ -15,17 +16,36 @@ const submitBtn = document.getElementById('submit-btn');
 let isRegisterMode = false;
 
 function showError(message) {
+    successMsg.style.display = 'none';
     errorMsg.textContent = message;
     errorMsg.style.display = 'block';
 }
 
-function hideError() {
+function showSuccess(message) {
     errorMsg.style.display = 'none';
+    successMsg.textContent = message;
+    successMsg.style.display = 'block';
+}
+
+function hideMessages() {
+    errorMsg.style.display = 'none';
+    successMsg.style.display = 'none';
 }
 
 function saveSession(data) {
     setAuth(data.token, data.user);
     window.location.href = '/app.html';
+}
+
+function translateError(message) {
+    const messages = {
+        'Registration request already pending approval': 'בקשת ההרשמה כבר ממתינה לאישור',
+        'Registration request pending admin approval': 'בקשת ההרשמה ממתינה לאישור המנהל',
+        'Account not found. A registration request was sent for admin approval.': 'החשבון לא קיים. נשלחה בקשה לאישור המנהל',
+        'Username or email already exists': 'שם המשתמש או האימייל כבר קיימים',
+        'Invalid credentials': 'פרטי התחברות שגויים'
+    };
+    return messages[message] || message;
 }
 
 async function initGoogleLogin() {
@@ -42,7 +62,7 @@ async function initGoogleLogin() {
         window.google.accounts.id.initialize({
             client_id: config.googleClientId,
             callback: async (response) => {
-                hideError();
+                hideMessages();
                 try {
                     const authResponse = await fetch(`${API_BASE}/auth/google`, {
                         method: 'POST',
@@ -51,7 +71,11 @@ async function initGoogleLogin() {
                     });
                     const data = await authResponse.json();
                     if (!authResponse.ok) {
-                        showError(data.error || 'Google login failed');
+                        if (authResponse.status === 403 && data.error?.includes('registration request')) {
+                            showSuccess('נשלחה בקשה לאישור המנהל. לאחר האישור תוכל להתחבר.');
+                            return;
+                        }
+                        showError(translateError(data.error) || 'שגיאה בהתחברות Google');
                         return;
                     }
                     saveSession(data);
@@ -73,12 +97,12 @@ async function initGoogleLogin() {
 
 toggleModeBtn.addEventListener('click', () => {
     isRegisterMode = !isRegisterMode;
-    hideError();
+    hideMessages();
     document.body.classList.toggle('register-mode', isRegisterMode);
 
     if (isRegisterMode) {
-        formSubtitle.textContent = 'צור חשבון חדש';
-        submitBtn.textContent = 'הירשם';
+        formSubtitle.textContent = 'שליחת בקשה לפתיחת חשבון';
+        submitBtn.textContent = 'שלח בקשה';
         toggleText.textContent = 'יש לך כבר חשבון?';
         toggleModeBtn.textContent = 'התחבר כאן';
         document.getElementById('register-username').required = true;
@@ -88,7 +112,7 @@ toggleModeBtn.addEventListener('click', () => {
         formSubtitle.textContent = 'התחבר לאזור האישי שלך';
         submitBtn.textContent = 'התחבר';
         toggleText.textContent = 'אין לך חשבון?';
-        toggleModeBtn.textContent = 'הירשם כאן';
+        toggleModeBtn.textContent = 'שלח בקשה להרשמה';
         document.getElementById('register-username').required = false;
         document.getElementById('register-email').required = false;
         document.getElementById('login-username').required = true;
@@ -97,7 +121,7 @@ toggleModeBtn.addEventListener('click', () => {
 
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    hideError();
+    hideMessages();
 
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
@@ -114,17 +138,36 @@ authForm.addEventListener('submit', async (e) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: registerUsername, email, password })
             });
-        } else {
-            response = await fetch(`${API_BASE}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
+
+            const data = await response.json();
+            if (response.status === 202) {
+                showSuccess('הבקשה נשלחה בהצלחה. תוכל להתחבר לאחר אישור המנהל.');
+                isRegisterMode = false;
+                document.body.classList.remove('register-mode');
+                formSubtitle.textContent = 'התחבר לאזור האישי שלך';
+                submitBtn.textContent = 'התחבר';
+                toggleText.textContent = 'אין לך חשבון?';
+                toggleModeBtn.textContent = 'שלח בקשה להרשמה';
+                authForm.reset();
+                return;
+            }
+
+            if (!response.ok) {
+                showError(translateError(data.error) || 'שגיאה בשליחת הבקשה');
+                return;
+            }
+            return;
         }
+
+        response = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
 
         const data = await response.json();
         if (!response.ok) {
-            showError(data.error || 'שגיאה בהתחברות');
+            showError(translateError(data.error) || 'שגיאה בהתחברות');
             return;
         }
 

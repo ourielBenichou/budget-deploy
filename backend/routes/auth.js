@@ -1,9 +1,19 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
+import RegistrationRequest from '../models/RegistrationRequest.js';
 import { createToken, publicUser, requireAuth, applyAdminEmailRole } from '../middleware/auth.js';
 
 const router = express.Router();
+
+async function findPendingRequest(email, username) {
+    const filters = [{ email: email?.toLowerCase() }, { username: username?.trim() }].filter(
+        item => Object.values(item)[0]
+    );
+
+    if (!filters.length) return null;
+    return RegistrationRequest.findOne({ status: 'pending', $or: filters });
+}
 
 router.get('/config', (_req, res) => {
     res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || '' });
@@ -20,24 +30,34 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 6 characters' });
         }
 
-        const existing = await User.findOne({
-            $or: [{ email: email.trim().toLowerCase() }, { username: username.trim() }]
+        const normalizedEmail = email.trim().toLowerCase();
+        const trimmedUsername = username.trim();
+
+        const existingUser = await User.findOne({
+            $or: [{ email: normalizedEmail }, { username: trimmedUsername }]
         });
-        if (existing) {
+        if (existingUser) {
             return res.status(400).json({ error: 'Username or email already exists' });
         }
 
+        const pendingRequest = await findPendingRequest(normalizedEmail, trimmedUsername);
+        if (pendingRequest) {
+            return res.status(400).json({ error: 'Registration request already pending approval' });
+        }
+
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = await User.create({
-            username: username.trim(),
-            email: email.trim().toLowerCase(),
+        await RegistrationRequest.create({
+            username: trimmedUsername,
+            email: normalizedEmail,
             passwordHash,
-            displayName: username.trim()
+            displayName: trimmedUsername,
+            authType: 'local',
+            status: 'pending'
         });
 
-        await applyAdminEmailRole(user);
-
-        res.status(201).json({ token: createToken(user), user: publicUser(user) });
+        res.status(202).json({
+            message: 'Registration request submitted. You can log in after admin approval.'
+        });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -51,11 +71,22 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Username and password are required' });
         }
 
+        const trimmedUsername = username.trim();
+        const normalizedEmail = trimmedUsername.toLowerCase();
+
         const user = await User.findOne({
-            $or: [{ username: username.trim() }, { email: username.trim().toLowerCase() }]
+            $or: [{ username: trimmedUsername }, { email: normalizedEmail }]
         });
 
-        if (!user?.passwordHash) {
+        if (!user) {
+            const pendingRequest = await findPendingRequest(normalizedEmail, trimmedUsername);
+            if (pendingRequest) {
+                return res.status(403).json({ error: 'Registration request pending admin approval' });
+            }
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        if (!user.passwordHash) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
@@ -92,19 +123,37 @@ router.post('/google', async (req, res) => {
             return res.status(401).json({ error: 'Invalid Google client' });
         }
 
+        const email = payload.email?.toLowerCase();
         let user = await User.findOne({
-            $or: [{ googleId: payload.sub }, { email: payload.email?.toLowerCase() }]
+            $or: [{ googleId: payload.sub }, { email }]
         });
 
         if (!user) {
-            const baseUsername = (payload.email?.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '');
-            user = await User.create({
-                email: payload.email.toLowerCase(),
+            const pendingRequest = await RegistrationRequest.findOne({
+                status: 'pending',
+                $or: [{ email }, { googleId: payload.sub }]
+            });
+
+            if (pendingRequest) {
+                return res.status(403).json({ error: 'Registration request pending admin approval' });
+            }
+
+            const baseUsername = (email?.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '');
+            await RegistrationRequest.create({
+                email,
                 googleId: payload.sub,
                 displayName: payload.name || baseUsername,
-                username: `${baseUsername}_${payload.sub.slice(0, 6)}`
+                username: `${baseUsername}_${payload.sub.slice(0, 6)}`,
+                authType: 'google',
+                status: 'pending'
             });
-        } else if (!user.googleId) {
+
+            return res.status(403).json({
+                error: 'Account not found. A registration request was sent for admin approval.'
+            });
+        }
+
+        if (!user.googleId) {
             user.googleId = payload.sub;
             if (!user.displayName && payload.name) user.displayName = payload.name;
             await user.save();

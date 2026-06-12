@@ -247,6 +247,20 @@
             color: var(--text-muted);
             font-size: 14px;
         }
+
+        .section-title {
+            margin: 0 0 16px 0;
+            font-size: 20px;
+        }
+
+        .requests-card {
+            margin-bottom: 24px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
     </style>
 </head>
 <body>
@@ -259,7 +273,29 @@
             </div>
         </div>
 
+        <div class="card requests-card">
+            <h2 class="section-title">בקשות הרשמה ממתינות</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>שם</th>
+                            <th>שם משתמש</th>
+                            <th>אימייל</th>
+                            <th>סוג</th>
+                            <th>תאריך</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requests-list">
+                        <tr><td colspan="6">טוען...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="card">
+            <h2 class="section-title">משתמשים פעילים</h2>
             <div id="error-msg" class="error-msg"></div>
             <div id="success-msg" class="success-msg"></div>
             <div style="overflow-x: auto;">
@@ -316,6 +352,6 @@
         </div>
     </div>
 
-    <script type="module" src="./src/admin.js?v=2"></script>
+    <script type="module" src="./src/admin.js?v=3"></script>
 </body>
 </html>

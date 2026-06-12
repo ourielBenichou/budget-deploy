@@ -20,6 +20,7 @@ if (authUser?.role !== 'admin') {
 
 const API_BASE = getApiBase();
 const usersList = document.getElementById('users-list');
+const requestsList = document.getElementById('requests-list');
 const errorMsg = document.getElementById('error-msg');
 const successMsg = document.getElementById('success-msg');
 const budgetModal = document.getElementById('budget-modal');
@@ -75,6 +76,92 @@ function renderRoleBadge(role) {
     const label = role === 'admin' ? 'מנהל' : 'משתמש';
     const className = role === 'admin' ? 'role-admin' : 'role-user';
     return `<span class="role-badge ${className}">${label}</span>`;
+}
+
+function formatDate(value) {
+    if (!value) return '-';
+    return new Date(value).toLocaleString('he-IL');
+}
+
+function renderRegistrationRequests(requests) {
+    if (!requests.length) {
+        requestsList.innerHTML = '<tr><td colspan="6">אין בקשות ממתינות</td></tr>';
+        return;
+    }
+
+    requestsList.innerHTML = requests.map(request => `
+        <tr>
+            <td>${escapeHtml(request.displayName)}</td>
+            <td>${escapeHtml(request.username || '-')}</td>
+            <td>${escapeHtml(request.email)}</td>
+            <td>${request.authType === 'google' ? 'Google' : 'שם משתמש/סיסמה'}</td>
+            <td>${formatDate(request.createdAt)}</td>
+            <td>
+                <div class="row-actions">
+                    <button type="button" class="btn btn-primary btn-small" onclick="window.approveRegistration('${request.id}')">אשר</button>
+                    <button type="button" class="btn btn-danger btn-small" onclick="window.rejectRegistration('${request.id}')">דחה</button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+window.approveRegistration = async function(requestId) {
+    if (!confirm('לאשר את בקשת ההרשמה ולפתוח חשבון חדש?')) return;
+
+    try {
+        const response = await apiFetch(`${API_BASE}/admin/registration-requests/${requestId}/approve`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            showError(data.error || 'שגיאה באישור הבקשה');
+            return;
+        }
+
+        showSuccess('החשבון נוצר בהצלחה');
+        await Promise.all([loadRegistrationRequests(), loadUsers()]);
+    } catch {
+        showError('שגיאת רשת');
+    }
+};
+
+window.rejectRegistration = async function(requestId) {
+    if (!confirm('לדחות את בקשת ההרשמה?')) return;
+
+    try {
+        const response = await apiFetch(`${API_BASE}/admin/registration-requests/${requestId}/reject`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            showError(data.error || 'שגיאה בדחיית הבקשה');
+            return;
+        }
+
+        showSuccess('הבקשה נדחתה');
+        await loadRegistrationRequests();
+    } catch {
+        showError('שגיאת רשת');
+    }
+};
+
+async function loadRegistrationRequests() {
+    try {
+        const response = await apiFetch(`${API_BASE}/admin/registration-requests?status=pending`);
+        const requests = await response.json();
+
+        if (!response.ok) {
+            showError(requests.error || 'שגיאה בטעינת בקשות');
+            return;
+        }
+
+        renderRegistrationRequests(requests);
+    } catch {
+        showError('שגיאת רשת');
+    }
 }
 
 function renderUsers(users) {
@@ -288,7 +375,10 @@ window.loadUsers = async function loadUsers() {
     }
 };
 
-document.getElementById('refresh-btn').addEventListener('click', loadUsers);
+document.getElementById('refresh-btn').addEventListener('click', () => {
+    loadRegistrationRequests();
+    loadUsers();
+});
 document.getElementById('close-budget-modal').addEventListener('click', () => {
     budgetModal.classList.remove('open');
     viewingUserId = null;
@@ -301,4 +391,5 @@ budgetModal.addEventListener('click', (event) => {
     }
 });
 
+loadRegistrationRequests();
 loadUsers();

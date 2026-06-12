@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
 import MonthSettings from '../models/MonthSettings.js';
-import { requireAdmin, publicUser } from '../middleware/auth.js';
+import RegistrationRequest from '../models/RegistrationRequest.js';
+import { requireAdmin, publicUser, applyAdminEmailRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,6 +30,93 @@ function buildBudgetSummary(bankBalance, transactions) {
         netBalance: bankBalance + totalIncome - totalExpenses
     };
 }
+
+function publicRegistrationRequest(request) {
+    return {
+        id: request._id.toString(),
+        username: request.username,
+        email: request.email,
+        displayName: request.displayName,
+        authType: request.authType,
+        status: request.status,
+        createdAt: request.createdAt
+    };
+}
+
+router.get('/registration-requests', requireAdmin, async (req, res) => {
+    try {
+        const status = req.query.status || 'pending';
+        const requests = await RegistrationRequest.find({ status })
+            .sort({ createdAt: -1 });
+
+        res.json(requests.map(publicRegistrationRequest));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/registration-requests/:id/approve', requireAdmin, async (req, res) => {
+    try {
+        const request = await RegistrationRequest.findById(req.params.id);
+
+        if (!request || request.status !== 'pending') {
+            return res.status(404).json({ error: 'Pending registration request not found' });
+        }
+
+        const existingUser = await User.findOne({
+            $or: [{ email: request.email }, { username: request.username }]
+        });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User already exists' });
+        }
+
+        const user = await User.create({
+            username: request.username,
+            email: request.email,
+            displayName: request.displayName,
+            passwordHash: request.passwordHash,
+            googleId: request.googleId,
+            role: 'user'
+        });
+
+        await applyAdminEmailRole(user);
+
+        request.status = 'approved';
+        request.reviewedAt = new Date();
+        request.reviewedBy = req.userId;
+        await request.save();
+
+        res.json({
+            message: 'Registration approved',
+            user: publicUser(user),
+            request: publicRegistrationRequest(request)
+        });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+router.post('/registration-requests/:id/reject', requireAdmin, async (req, res) => {
+    try {
+        const request = await RegistrationRequest.findById(req.params.id);
+
+        if (!request || request.status !== 'pending') {
+            return res.status(404).json({ error: 'Pending registration request not found' });
+        }
+
+        request.status = 'rejected';
+        request.reviewedAt = new Date();
+        request.reviewedBy = req.userId;
+        await request.save();
+
+        res.json({
+            message: 'Registration rejected',
+            request: publicRegistrationRequest(request)
+        });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
 
 router.get('/users', requireAdmin, async (_req, res) => {
     try {
