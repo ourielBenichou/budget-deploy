@@ -164,6 +164,89 @@
             background: #fde8ea;
             color: var(--danger);
         }
+
+        .row-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: auto;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 12px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .summary-card span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .summary-card strong {
+            font-size: 20px;
+        }
+
+        .budget-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .budget-section {
+            margin-bottom: 18px;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -198,6 +281,41 @@
         </div>
     </div>
 
-    <script type="module" src="./src/admin.js?v=1"></script>
+    <div id="budget-modal" class="modal-backdrop">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="budget-modal-title">תקציב משתמש</h2>
+                <button type="button" id="close-budget-modal" class="btn btn-secondary">סגור</button>
+            </div>
+
+            <div class="form-group" style="max-width: 220px; margin-bottom: 16px;">
+                <label for="budget-month-select">חודש</label>
+                <input type="month" id="budget-month-select">
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <span>יתרת פתיחה</span>
+                    <strong id="budget-bank-balance">0 ₪</strong>
+                </div>
+                <div class="summary-card">
+                    <span>סך הכנסות</span>
+                    <strong id="budget-total-income">0 ₪</strong>
+                </div>
+                <div class="summary-card">
+                    <span>סך הוצאות</span>
+                    <strong id="budget-total-expenses">0 ₪</strong>
+                </div>
+                <div class="summary-card">
+                    <span>מאזן נטו</span>
+                    <strong id="budget-net-balance">0 ₪</strong>
+                </div>
+            </div>
+
+            <div id="budget-content"></div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/admin.js?v=2"></script>
 </body>
 </html>

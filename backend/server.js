@@ -15,7 +15,7 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-12-admin-v1';
+const APP_VERSION = '2026-06-12-admin-v2';
 
 const app = express();
 app.use(cors());

@@ -22,6 +22,26 @@ const API_BASE = getApiBase();
 const usersList = document.getElementById('users-list');
 const errorMsg = document.getElementById('error-msg');
 const successMsg = document.getElementById('success-msg');
+const budgetModal = document.getElementById('budget-modal');
+const budgetMonthSelect = document.getElementById('budget-month-select');
+let viewingUserId = null;
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function formatMoney(value) {
+    return `${Number(value || 0).toLocaleString()} ₪`;
+}
+
+function getCurrentMonthKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
 
 function showError(message) {
     successMsg.style.display = 'none';
@@ -65,12 +85,16 @@ function renderUsers(users) {
 
     usersList.innerHTML = users.map(user => `
         <tr id="row-${user.id}">
-            <td>${user.displayName}</td>
-            <td>${user.username || '-'}</td>
-            <td>${user.email}</td>
+            <td>${escapeHtml(user.displayName)}</td>
+            <td>${escapeHtml(user.username || '-')}</td>
+            <td>${escapeHtml(user.email)}</td>
             <td>${renderRoleBadge(user.role)}</td>
             <td>
-                <button type="button" class="btn btn-secondary btn-small" onclick="window.startEditUser('${user.id}')">ערוך</button>
+                <div class="row-actions">
+                    <button type="button" class="btn btn-secondary btn-small" onclick="window.startEditUser('${user.id}')">ערוך</button>
+                    <button type="button" class="btn btn-primary btn-small" onclick="window.viewUserBudget('${user.id}')">צפה בתקציב</button>
+                    <button type="button" class="btn btn-danger btn-small" onclick="window.deleteUser('${user.id}')">מחק</button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -85,11 +109,11 @@ window.startEditUser = function(userId) {
         <td colspan="5">
             <div class="edit-form">
                 <label>שם תצוגה</label>
-                <input type="text" id="edit-display-${userId}" value="${user.displayName}">
+                <input type="text" id="edit-display-${userId}" value="${escapeHtml(user.displayName)}">
                 <label>שם משתמש</label>
-                <input type="text" id="edit-username-${userId}" value="${user.username || ''}">
+                <input type="text" id="edit-username-${userId}" value="${escapeHtml(user.username || '')}">
                 <label>אימייל</label>
-                <input type="email" id="edit-email-${userId}" value="${user.email}">
+                <input type="email" id="edit-email-${userId}" value="${escapeHtml(user.email)}">
                 <label>תפקיד</label>
                 <select id="edit-role-${userId}">
                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>משתמש</option>
@@ -140,6 +164,113 @@ window.saveUser = async function(userId) {
     }
 };
 
+window.deleteUser = async function(userId) {
+    const user = window.__usersCache?.find(item => item.id === userId);
+    if (!user) return;
+
+    const confirmed = confirm(`למחוק את המשתמש ${user.displayName}?\nפעולה זו תמחק גם את כל התקציב שלו.`);
+    if (!confirmed) return;
+
+    try {
+        const response = await apiFetch(`${API_BASE}/admin/users/${userId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            showError(data.error || 'שגיאה במחיקת משתמש');
+            return;
+        }
+
+        showSuccess('המשתמש נמחק בהצלחה');
+        await loadUsers();
+    } catch {
+        showError('שגיאת רשת');
+    }
+};
+
+function renderTransactionSection(title, transactions) {
+    if (!transactions.length) {
+        return `
+            <div class="budget-section">
+                <h3>${escapeHtml(title)}</h3>
+                <div class="empty-state">אין תנועות</div>
+            </div>
+        `;
+    }
+
+    const rows = transactions.map(t => {
+        const timeDisplay = t.day ? `ב-${t.day} לחודש` : (t.date || '-');
+        return `
+            <tr>
+                <td>${escapeHtml(t.description)}</td>
+                <td>${escapeHtml(timeDisplay)}</td>
+                <td>${formatMoney(t.amount)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="budget-section">
+            <h3>${escapeHtml(title)}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם</th>
+                        <th>מועד</th>
+                        <th>סכום</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderBudgetModal(data) {
+    document.getElementById('budget-modal-title').textContent = `תקציב של ${data.user.displayName}`;
+    document.getElementById('budget-bank-balance').textContent = formatMoney(data.summary.bankBalance);
+    document.getElementById('budget-total-income').textContent = formatMoney(data.summary.totalIncome);
+    document.getElementById('budget-total-expenses').textContent = formatMoney(data.summary.totalExpenses);
+    document.getElementById('budget-net-balance').textContent = formatMoney(data.summary.netBalance);
+
+    const incomes = data.transactions.filter(t => t.type === 'income' || t.type === 'one-time-income');
+    const fixedExpenses = data.transactions.filter(t => t.type === 'fixed-expense');
+    const variableExpenses = data.transactions.filter(t => t.type === 'variable-expense');
+
+    document.getElementById('budget-content').innerHTML = [
+        renderTransactionSection('הכנסות', incomes),
+        renderTransactionSection('הוצאות קבועות', fixedExpenses),
+        renderTransactionSection('הוצאות משתנות', variableExpenses)
+    ].join('');
+}
+
+async function loadUserBudget() {
+    if (!viewingUserId) return;
+
+    try {
+        const month = budgetMonthSelect.value || getCurrentMonthKey();
+        const response = await apiFetch(`${API_BASE}/admin/users/${viewingUserId}/budget?month=${month}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            showError(data.error || 'שגיאה בטעינת תקציב');
+            return;
+        }
+
+        renderBudgetModal(data);
+        budgetModal.classList.add('open');
+    } catch {
+        showError('שגיאת רשת');
+    }
+}
+
+window.viewUserBudget = function(userId) {
+    viewingUserId = userId;
+    budgetMonthSelect.value = getCurrentMonthKey();
+    loadUserBudget();
+};
+
 window.loadUsers = async function loadUsers() {
     try {
         const response = await apiFetch(`${API_BASE}/admin/users`);
@@ -158,4 +289,16 @@ window.loadUsers = async function loadUsers() {
 };
 
 document.getElementById('refresh-btn').addEventListener('click', loadUsers);
+document.getElementById('close-budget-modal').addEventListener('click', () => {
+    budgetModal.classList.remove('open');
+    viewingUserId = null;
+});
+budgetMonthSelect.addEventListener('change', loadUserBudget);
+budgetModal.addEventListener('click', (event) => {
+    if (event.target === budgetModal) {
+        budgetModal.classList.remove('open');
+        viewingUserId = null;
+    }
+});
+
 loadUsers();
