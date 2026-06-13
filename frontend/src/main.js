@@ -78,7 +78,7 @@ function isInlineEditing() {
 }
 
 function shouldApplyServerTransactions() {
-    return !isInlineEditing() && Date.now() >= lastMutationTime + 2000;
+    return !isInlineEditing() && Date.now() >= lastMutationTime + 5000;
 }
 
 function normalizeServerTransaction(t) {
@@ -576,7 +576,20 @@ async function fetchMonthDataFromServer() {
 }
 
 fetchMonthDataFromServer();
-setInterval(fetchMonthDataFromServer, 5000);
+
+let backgroundSyncTimer = null;
+function scheduleBackgroundSync() {
+    if (isInlineEditing()) return;
+    clearTimeout(backgroundSyncTimer);
+    backgroundSyncTimer = setTimeout(fetchMonthDataFromServer, 1500);
+}
+
+window.addEventListener('focus', scheduleBackgroundSync);
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        scheduleBackgroundSync();
+    }
+});
 
 async function refreshAuthUser() {
     try {
