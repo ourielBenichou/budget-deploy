@@ -67,6 +67,24 @@ const totalExpensesEl = document.getElementById('total-expenses');
 
 let trendChartInstance = null;
 let bankBalanceSaveTimeout = null;
+let lastMutationTime = 0;
+
+function markLocalMutation() {
+    lastMutationTime = Date.now();
+}
+
+function isInlineEditing() {
+    return document.querySelector('[id^="edit-amount-"]') !== null;
+}
+
+function shouldApplyServerTransactions() {
+    return !isInlineEditing() && Date.now() >= lastMutationTime + 2000;
+}
+
+function normalizeServerTransaction(t) {
+    if (!t.id && t._id) t.id = String(t._id);
+    return t;
+}
 
 const ICONS = {
     edit: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`,
@@ -289,11 +307,13 @@ async function saveTransactionToServer(transaction) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Server rejected data:', errorData);
-            throw new Error('Failed to save');
+            throw new Error(errorData.error || 'Failed to save');
         }
+        markLocalMutation();
         console.log('Transaction saved to MongoDB!');
     } catch (err) {
         console.error('Error saving to server:', err);
+        throw err;
     }
 }
 
@@ -308,6 +328,7 @@ async function saveBankBalanceToServer() {
         if (!response.ok) {
             throw new Error('Failed to save bank balance');
         }
+        markLocalMutation();
     } catch (err) {
         console.error('Error saving bank balance to server:', err);
     }
@@ -368,11 +389,15 @@ if (budgetForm) {
 
         const data = getSelectedMonthData();
         data.transactions.push(newTransaction);
-        
-        // כאן אנחנו שולחים את הנתונים לשרת (MongoDB)
-        await saveTransactionToServer(newTransaction);
 
-        updateInterface();
+        try {
+            await saveTransactionToServer(newTransaction);
+            updateInterface();
+        } catch {
+            data.transactions.pop();
+            alert('שמירת התנועה נכשלה. נסה שוב.');
+            return;
+        }
 
         transactionNameInput.value = '';
         transactionAmountInput.value = '';
@@ -389,21 +414,24 @@ window.deleteTransaction = async function(id) {
 
     if (!confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) return;
 
-    const data = getSelectedMonthData();
-    data.transactions = data.transactions.filter(t => getTransactionId(t) !== id);
-    updateInterface();
-
     try {
         const response = await apiFetch(`${API_BASE}/transactions/${id}`, {
             method: 'DELETE'
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.warn("Server delete failed:", errorData);
+            const errorData = await response.json().catch(() => ({}));
+            alert(errorData.message || errorData.error || 'מחיקה נכשלה בשרת');
+            return;
         }
+
+        const data = getSelectedMonthData();
+        data.transactions = data.transactions.filter(t => getTransactionId(t) !== id);
+        markLocalMutation();
+        updateInterface();
     } catch (err) {
         console.error('Network error:', err);
+        alert('שגיאת רשת במחיקה. נסה שוב.');
     }
 };
 
@@ -442,13 +470,19 @@ window.startInlineEdit = function(id) {
 
 window.saveInlineEdit = async function(id) {
     const editAmountInput = document.getElementById(`edit-amount-${id}`);
-    const newAmount = parseFloat(editAmountInput.value);
+    const newAmount = parseFloat(editAmountInput?.value);
 
     if (isNaN(newAmount) || newAmount < 0) return;
 
     const data = getSelectedMonthData();
     const t = data.transactions.find(item => getTransactionId(item) === id);
     if (!t) return;
+
+    const previousValues = {
+        amount: t.amount,
+        day: t.day,
+        date: t.date
+    };
 
     t.amount = newAmount;
 
@@ -457,8 +491,6 @@ window.saveInlineEdit = async function(id) {
 
     const editDateInput = document.getElementById(`edit-date-${id}`);
     if (editDateInput) t.date = editDateInput.value;
-
-    updateInterface();
 
     const updatedData = { amount: t.amount };
     if (t.day != null) updatedData.day = t.day;
@@ -471,10 +503,19 @@ window.saveInlineEdit = async function(id) {
         });
 
         if (!response.ok) {
-            console.warn('Server update failed');
+            Object.assign(t, previousValues);
+            alert('שמירת השינויים נכשלה. נסה שוב.');
+            updateInterface();
+            return;
         }
+
+        markLocalMutation();
+        updateInterface();
     } catch (err) {
+        Object.assign(t, previousValues);
         console.error('Error updating:', err);
+        alert('שגיאת רשת בשמירה. נסה שוב.');
+        updateInterface();
     }
 };
 
@@ -497,32 +538,38 @@ async function fetchMonthDataFromServer() {
             apiFetch(`${API_BASE}/months/${selectedMonth}`)
         ]);
 
-        if (txResponse.ok) {
-            const serverTransactions = await txResponse.json();
-            serverTransactions.forEach(t => {
-                if (!t.id && t._id) t.id = String(t._id);
-            });
+        const data = getSelectedMonthData();
+        let shouldRefreshUi = false;
 
-            const data = getSelectedMonthData();
+        if (txResponse.ok && shouldApplyServerTransactions()) {
+            const serverTransactions = await txResponse.json();
+            serverTransactions.forEach(normalizeServerTransaction);
             data.transactions = serverTransactions;
+            shouldRefreshUi = true;
         }
 
         if (monthResponse.ok) {
             const monthData = await monthResponse.json();
-            const data = getSelectedMonthData();
 
             if (monthData.exists === false && data.bankBalance !== 5000) {
                 await saveBankBalanceToServer();
-            } else {
+            } else if (document.activeElement !== currentBankBalanceInput) {
                 data.bankBalance = monthData.bankBalance ?? 5000;
 
-                if (currentBankBalanceInput && document.activeElement !== currentBankBalanceInput) {
+                if (currentBankBalanceInput) {
                     currentBankBalanceInput.value = data.bankBalance;
                 }
+                shouldRefreshUi = true;
             }
         }
 
-        updateInterface();
+        if (shouldRefreshUi && !isInlineEditing()) {
+            updateInterface();
+        } else if (shouldRefreshUi) {
+            updateSummary();
+            updateChart();
+            saveToLocalStorage();
+        }
     } catch (err) {
         console.error('Error syncing from server:', err);
     }
