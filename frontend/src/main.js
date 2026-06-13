@@ -144,13 +144,31 @@ function updateSummary() {
     }
 }
 
+function getDaysInMonth(monthKey) {
+    const [year, month] = monthKey.split('-').map(Number);
+    return new Date(year, month, 0).getDate();
+}
+
+function getChartMilestones(monthKey) {
+    const daysInMonth = getDaysInMonth(monthKey);
+    const baseMilestones = [1, 10, 15, 20, 25, 31];
+    const milestones = baseMilestones.filter(day => day <= daysInMonth);
+
+    if (milestones.at(-1) !== daysInMonth) {
+        milestones.push(daysInMonth);
+    }
+
+    return milestones;
+}
+
 function updateChart() {
     const ctx = document.getElementById('trendChart')?.getContext('2d');
     if (!ctx) return;
 
     const data = getSelectedMonthData();
     const startBalance = data.bankBalance;
-    const milestones = [1, 10, 15, 20, 25, 31];
+    const milestones = getChartMilestones(selectedMonth);
+    const labels = milestones.map(day => `${String(day).padStart(2, '0')} לחודש`);
     
     const chartData = milestones.map(day => {
         let balanceAtMilestone = startBalance;
@@ -177,7 +195,7 @@ function updateChart() {
     trendChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['01 לחודש', '10 לחודש', '15 לחודש', '20 לחודש', '25 לחודש', '31 לחודש'],
+            labels,
             datasets: [{
                 label: 'גובה העו"ש בחשבון (₪)',
                 data: chartData,
