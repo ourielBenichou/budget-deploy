@@ -6,6 +6,7 @@ import Transaction from '../models/Transaction.js';
 import MonthSettings from '../models/MonthSettings.js';
 import RegistrationRequest from '../models/RegistrationRequest.js';
 import { requireAdmin, publicUser, applyAdminEmailRole } from '../middleware/auth.js';
+import { validatePassword } from '../utils/password.js';
 
 const router = express.Router();
 
@@ -76,6 +77,7 @@ router.post('/registration-requests/:id/approve', requireAdmin, async (req, res)
             displayName: request.displayName,
             passwordHash: request.passwordHash,
             googleId: request.googleId,
+            appleId: request.appleId,
             role: 'user'
         });
 
@@ -171,8 +173,9 @@ router.put('/users/:id', requireAdmin, async (req, res) => {
         }
 
         if (password) {
-            if (password.length < 6) {
-                return res.status(400).json({ error: 'Password must be at least 6 characters' });
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                return res.status(400).json({ error: passwordError });
             }
             user.passwordHash = await bcrypt.hash(password, 10);
         }

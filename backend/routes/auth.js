@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import RegistrationRequest from '../models/RegistrationRequest.js';
 import { createToken, publicUser, requireAuth, applyAdminEmailRole } from '../middleware/auth.js';
+import { validatePassword } from '../utils/password.js';
+import { verifyAppleIdToken } from '../utils/appleAuth.js';
 
 const router = express.Router();
 
@@ -15,8 +17,56 @@ async function findPendingRequest(email, username) {
     return RegistrationRequest.findOne({ status: 'pending', $or: filters });
 }
 
+async function handleSocialLogin({ providerId, providerField, email, displayName, username, authType, res }) {
+    const providerQuery = { [providerField]: providerId };
+    const emailQuery = email ? { email } : null;
+
+    let user = await User.findOne({
+        $or: [providerQuery, ...(emailQuery ? [emailQuery] : [])]
+    });
+
+    if (!user) {
+        const pendingFilters = [{ [providerField]: providerId }];
+        if (email) pendingFilters.push({ email });
+
+        const pendingRequest = await RegistrationRequest.findOne({
+            status: 'pending',
+            $or: pendingFilters
+        });
+
+        if (pendingRequest) {
+            return res.status(403).json({ error: 'Registration request pending admin approval' });
+        }
+
+        await RegistrationRequest.create({
+            email: email || `${providerId}@${authType}.pending`,
+            [providerField]: providerId,
+            displayName: displayName || username,
+            username,
+            authType,
+            status: 'pending'
+        });
+
+        return res.status(403).json({
+            error: 'Account not found. A registration request was sent for admin approval.'
+        });
+    }
+
+    if (!user[providerField]) {
+        user[providerField] = providerId;
+        if (!user.displayName && displayName) user.displayName = displayName;
+        await user.save();
+    }
+
+    await applyAdminEmailRole(user);
+    return res.json({ token: createToken(user), user: publicUser(user) });
+}
+
 router.get('/config', (_req, res) => {
-    res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || '' });
+    res.json({
+        googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+        appleClientId: process.env.APPLE_CLIENT_ID || ''
+    });
 });
 
 router.post('/register', async (req, res) => {
@@ -26,8 +76,10 @@ router.post('/register', async (req, res) => {
         if (!username?.trim() || !email?.trim() || !password) {
             return res.status(400).json({ error: 'Username, email and password are required' });
         }
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+            return res.status(400).json({ error: passwordError });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
@@ -87,7 +139,7 @@ router.post('/login', async (req, res) => {
         }
 
         if (!user.passwordHash) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ error: 'Use Google or Apple sign-in for this account' });
         }
 
         const valid = await bcrypt.compare(password, user.passwordHash);
@@ -124,46 +176,50 @@ router.post('/google', async (req, res) => {
         }
 
         const email = payload.email?.toLowerCase();
-        let user = await User.findOne({
-            $or: [{ googleId: payload.sub }, { email }]
+        const baseUsername = (email?.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '');
+
+        return handleSocialLogin({
+            providerId: payload.sub,
+            providerField: 'googleId',
+            email,
+            displayName: payload.name || baseUsername,
+            username: `${baseUsername}_${payload.sub.slice(0, 6)}`,
+            authType: 'google',
+            res
         });
-
-        if (!user) {
-            const pendingRequest = await RegistrationRequest.findOne({
-                status: 'pending',
-                $or: [{ email }, { googleId: payload.sub }]
-            });
-
-            if (pendingRequest) {
-                return res.status(403).json({ error: 'Registration request pending admin approval' });
-            }
-
-            const baseUsername = (email?.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '');
-            await RegistrationRequest.create({
-                email,
-                googleId: payload.sub,
-                displayName: payload.name || baseUsername,
-                username: `${baseUsername}_${payload.sub.slice(0, 6)}`,
-                authType: 'google',
-                status: 'pending'
-            });
-
-            return res.status(403).json({
-                error: 'Account not found. A registration request was sent for admin approval.'
-            });
-        }
-
-        if (!user.googleId) {
-            user.googleId = payload.sub;
-            if (!user.displayName && payload.name) user.displayName = payload.name;
-            await user.save();
-        }
-
-        await applyAdminEmailRole(user);
-
-        res.json({ token: createToken(user), user: publicUser(user) });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/apple', async (req, res) => {
+    try {
+        const { identityToken, email, fullName } = req.body;
+
+        if (!identityToken) {
+            return res.status(400).json({ error: 'Missing Apple identity token' });
+        }
+        if (!process.env.APPLE_CLIENT_ID) {
+            return res.status(503).json({ error: 'Apple login is not configured' });
+        }
+
+        const payload = await verifyAppleIdToken(identityToken, process.env.APPLE_CLIENT_ID);
+        const appleEmail = (payload.email || email)?.toLowerCase();
+        const displayName = fullName?.trim()
+            || (appleEmail?.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '');
+        const baseUsername = displayName.replace(/[^a-zA-Z0-9_]/g, '') || 'user';
+
+        return handleSocialLogin({
+            providerId: payload.sub,
+            providerField: 'appleId',
+            email: appleEmail,
+            displayName,
+            username: `${baseUsername}_${payload.sub.slice(0, 6)}`,
+            authType: 'apple',
+            res
+        });
+    } catch (err) {
+        res.status(401).json({ error: err.message || 'Invalid Apple token' });
     }
 });
 

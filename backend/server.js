@@ -15,7 +15,7 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-13-render-stable-v1';
+const APP_VERSION = '2026-06-13-auth-social-v1';
 const APK_DOWNLOAD_URL =
     'https://raw.githubusercontent.com/ourielBenichou/budget-deploy/main/frontend/downloads/budget-app.apk';
 

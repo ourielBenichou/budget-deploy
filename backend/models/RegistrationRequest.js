@@ -6,7 +6,8 @@ const registrationRequestSchema = new mongoose.Schema({
     passwordHash: { type: String },
     displayName: { type: String, required: true, trim: true },
     googleId: { type: String },
-    authType: { type: String, enum: ['local', 'google'], required: true },
+    appleId: { type: String },
+    authType: { type: String, enum: ['local', 'google', 'apple'], required: true },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     reviewedAt: { type: Date },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }

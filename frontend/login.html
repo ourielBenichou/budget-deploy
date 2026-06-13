@@ -161,8 +161,58 @@
         .register-fields { display: none; }
         body.register-mode .register-fields { display: block; }
         body.register-mode .login-fields { display: none; }
+
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .social-heading {
+            text-align: center;
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .btn-apple {
+            width: 100%;
+            min-height: 44px;
+            border: 1px solid #000;
+            border-radius: 6px;
+            background: #000;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-apple:hover {
+            background: #1a1a1a;
+        }
+
+        .password-hint {
+            margin: -8px 0 12px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .local-auth-heading {
+            text-align: center;
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
     </style>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js" async defer></script>
 </head>
 <body>
     <div class="login-card">
@@ -171,6 +221,17 @@
 
         <div id="error-msg" class="error-msg"></div>
         <div id="success-msg" class="success-msg"></div>
+
+        <div id="social-login-section" class="social-login">
+            <p class="social-heading">התחברות מהירה</p>
+            <div id="google-btn"></div>
+            <button type="button" id="apple-btn" class="btn-apple" style="display: none;">&#63743; התחבר עם Apple</button>
+        </div>
+
+        <div class="divider" id="auth-divider">או עם שם משתמש וסיסמה</div>
+
+        <p class="local-auth-heading login-fields">התחברות עם שם משתמש</p>
+        <p class="local-auth-heading register-fields">הרשמה עם שם משתמש</p>
 
         <form id="auth-form">
             <div class="form-group register-fields">
@@ -190,14 +251,14 @@
 
             <div class="form-group">
                 <label for="login-password">סיסמה</label>
-                <input type="password" id="login-password" required autocomplete="current-password" minlength="6">
+                <input type="password" id="login-password" required autocomplete="current-password">
+                <p class="password-hint register-fields">
+                    הסיסמה חייבת להכיל לפחות 6 תווים, אות גדולה, אות קטנה ומספר.
+                </p>
             </div>
 
             <button type="submit" class="btn-primary" id="submit-btn">התחבר</button>
         </form>
-
-        <div class="divider">או</div>
-        <div id="google-btn"></div>
 
         <div class="toggle-mode">
             <span id="toggle-text">אין לך חשבון?</span>
@@ -210,6 +271,6 @@
     </div>
 
     <script type="module" src="./src/mobile.js"></script>
-    <script type="module" src="./src/login.js?v=2"></script>
+    <script type="module" src="./src/login.js?v=3"></script>
 </body>
 </html>

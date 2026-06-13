@@ -94,7 +94,7 @@ function renderRegistrationRequests(requests) {
             <td>${escapeHtml(request.displayName)}</td>
             <td>${escapeHtml(request.username || '-')}</td>
             <td>${escapeHtml(request.email)}</td>
-            <td>${request.authType === 'google' ? 'Google' : 'שם משתמש/סיסמה'}</td>
+            <td>${request.authType === 'google' ? 'Google' : request.authType === 'apple' ? 'Apple' : 'שם משתמש/סיסמה'}</td>
             <td>${formatDate(request.createdAt)}</td>
             <td>
                 <div class="row-actions">
