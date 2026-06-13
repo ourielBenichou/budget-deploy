@@ -415,7 +415,7 @@ window.deleteTransaction = async function(id) {
     if (!confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) return;
 
     try {
-        const response = await apiFetch(`${API_BASE}/transactions/${id}`, {
+        const response = await apiFetch(`${API_BASE}/transactions/${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
 
@@ -486,25 +486,33 @@ window.saveInlineEdit = async function(id) {
 
     t.amount = newAmount;
 
+    const updatedData = { amount: t.amount };
+
     const editDayInput = document.getElementById(`edit-day-${id}`);
-    if (editDayInput) t.day = parseInt(editDayInput.value);
+    if (editDayInput) {
+        const day = parseInt(editDayInput.value, 10);
+        if (!Number.isNaN(day)) {
+            t.day = day;
+            updatedData.day = day;
+        }
+    }
 
     const editDateInput = document.getElementById(`edit-date-${id}`);
-    if (editDateInput) t.date = editDateInput.value;
-
-    const updatedData = { amount: t.amount };
-    if (t.day != null) updatedData.day = t.day;
-    if (t.date != null) updatedData.date = t.date;
+    if (editDateInput && editDateInput.value) {
+        t.date = editDateInput.value;
+        updatedData.date = editDateInput.value;
+    }
 
     try {
-        const response = await apiFetch(`${API_BASE}/transactions/${id}`, {
+        const response = await apiFetch(`${API_BASE}/transactions/${encodeURIComponent(id)}`, {
             method: 'PUT',
             body: JSON.stringify(updatedData)
         });
 
         if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
             Object.assign(t, previousValues);
-            alert('שמירת השינויים נכשלה. נסה שוב.');
+            alert(errorData.message || errorData.error || 'שמירת השינויים נכשלה. נסה שוב.');
             updateInterface();
             return;
         }

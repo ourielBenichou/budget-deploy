@@ -9,13 +9,14 @@ import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import User from './models/User.js';
 import { requireAuth } from './middleware/auth.js';
+import { buildTransactionLookup } from './utils/transactionQuery.js';
 
 import 'dotenv/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-13-sync-fix-v2';
+const APP_VERSION = '2026-06-13-transaction-update-v1';
 const APK_DOWNLOAD_URL =
     'https://raw.githubusercontent.com/ourielBenichou/budget-deploy/main/frontend/downloads/budget-app.apk';
 
@@ -138,11 +139,9 @@ app.put('/api/months/:month', requireAuth, async (req, res) => {
 
 app.delete('/api/transactions/:id', requireAuth, async (req, res) => {
     try {
-        const transactionId = req.params.id;
-        const result = await Transaction.findOneAndDelete({
-            userId: req.userId,
-            $or: [{ id: transactionId }, { _id: transactionId }]
-        });
+        const result = await Transaction.findOneAndDelete(
+            buildTransactionLookup(req.userId, req.params.id)
+        );
 
         if (!result) {
             return res.status(404).json({ message: 'Transaction not found' });
@@ -156,17 +155,19 @@ app.delete('/api/transactions/:id', requireAuth, async (req, res) => {
 
 app.put('/api/transactions/:id', requireAuth, async (req, res) => {
     try {
+        const update = {};
+        if (req.body.amount != null && !Number.isNaN(req.body.amount)) update.amount = req.body.amount;
+        if (req.body.day != null && !Number.isNaN(req.body.day)) update.day = req.body.day;
+        if (req.body.date != null) update.date = req.body.date;
+        if (req.body.description != null) update.description = req.body.description;
+
+        if (Object.keys(update).length === 0) {
+            return res.status(400).json({ error: 'No valid fields to update' });
+        }
+
         const result = await Transaction.findOneAndUpdate(
-            {
-                userId: req.userId,
-                $or: [{ id: req.params.id }, { _id: req.params.id }]
-            },
-            {
-                amount: req.body.amount,
-                day: req.body.day,
-                date: req.body.date,
-                description: req.body.description
-            },
+            buildTransactionLookup(req.userId, req.params.id),
+            update,
             { new: true }
         );
 
