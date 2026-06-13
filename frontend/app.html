@@ -311,21 +311,43 @@
             word-wrap: break-word;
         }
 
-        .btn-edit, .btn-delete {
-            padding: 5px 8px;
+        .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+            width: 34px;
+            height: 34px;
+            padding: 0;
             border: none;
-            border-radius: 4px;
-            font-size: 12px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: 500;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
         }
 
-        .btn-edit { background-color: #f0f2f5; color: #4a5568; margin-left: 3px; }
+        .btn-edit svg,
+        .btn-delete svg,
+        .btn-save svg,
+        .btn-cancel svg {
+            width: 17px;
+            height: 17px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-edit { background-color: #f0f2f5; color: #4a5568; margin-left: 4px; }
         .btn-edit:hover { background-color: #e2e8f0; }
 
         .btn-delete { background-color: var(--danger-light); color: var(--danger); }
         .btn-delete:hover { background-color: #fbc6cb; }
+
+        .btn-save { background-color: var(--primary-light); color: #13786f; margin-left: 4px; }
+        .btn-save:hover { background-color: #c9f5ec; }
+
+        .btn-cancel { background-color: #f0f2f5; color: #666; }
+        .btn-cancel:hover { background-color: #e2e8f0; }
         
         .actions-cell {
             text-align: center;
@@ -527,6 +549,6 @@
     </main>
 
     <script type="module" src="./src/mobile.js"></script>
-    <script type="module" src="./src/main.js?v=6"></script>
+    <script type="module" src="./src/main.js?v=7"></script>
 </body>
 </html>

@@ -68,6 +68,13 @@ const totalExpensesEl = document.getElementById('total-expenses');
 let trendChartInstance = null;
 let bankBalanceSaveTimeout = null;
 
+const ICONS = {
+    edit: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`,
+    delete: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
+    save: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+    cancel: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`
+};
+
 function getTransactionId(t) {
     return t.id || String(t._id);
 }
@@ -244,8 +251,8 @@ function renderTables() {
         <td id="time-td-${txId}">${timeDisplay}</td>
         <td id="amount-td-${txId}">${t.amount.toLocaleString()} ₪</td>
         <td id="actions-td-${txId}" class="actions-cell">
-            <button class="btn-edit" onclick="window.startInlineEdit('${txId}')">ערוך</button>
-            <button class="btn-delete" onclick="window.deleteTransaction('${txId}')">מחק</button>
+            <button class="btn-edit" type="button" title="ערוך" aria-label="ערוך" onclick="window.startInlineEdit('${txId}')">${ICONS.edit}</button>
+            <button class="btn-delete" type="button" title="מחק" aria-label="מחק" onclick="window.deleteTransaction('${txId}')">${ICONS.delete}</button>
         </td>
     `;
 
@@ -428,8 +435,8 @@ window.startInlineEdit = function(id) {
     `;
 
     actionsTd.innerHTML = `
-        <button class="btn-save" onclick="window.saveInlineEdit('${id}')" style="background-color: #2ec4b6; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-left: 4px;">שמור</button>
-        <button class="btn-delete" onclick="window.updateInterface()" style="background-color: #777; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">ביטול</button>
+        <button class="btn-save" type="button" title="שמור" aria-label="שמור" onclick="window.saveInlineEdit('${id}')">${ICONS.save}</button>
+        <button class="btn-cancel" type="button" title="ביטול" aria-label="ביטול" onclick="window.updateInterface()">${ICONS.cancel}</button>
     `;
 };
 
