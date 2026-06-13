@@ -534,3 +534,58 @@ document.getElementById('logout-btn')?.addEventListener('click', () => {
     clearAuth();
     window.location.href = '/login.html';
 });
+
+const TABLE_COLLAPSE_KEY = getStorageKey('budget_table_collapsed');
+
+function getCollapsedTables() {
+    try {
+        return JSON.parse(localStorage.getItem(TABLE_COLLAPSE_KEY) || '{}');
+    } catch {
+        return {};
+    }
+}
+
+function saveCollapsedTables(state) {
+    localStorage.setItem(TABLE_COLLAPSE_KEY, JSON.stringify(state));
+}
+
+function setTableCollapsed(container, collapsed) {
+    const btn = container.querySelector('.table-toggle-btn');
+    const tableId = container.dataset.tableId;
+    container.classList.toggle('collapsed', collapsed);
+    if (btn) {
+        btn.textContent = collapsed ? '+' : '−';
+        btn.setAttribute('aria-expanded', String(!collapsed));
+        btn.setAttribute('aria-label', collapsed ? 'פתח טבלה' : 'כווץ טבלה');
+    }
+    if (tableId) {
+        const state = getCollapsedTables();
+        state[tableId] = collapsed;
+        saveCollapsedTables(state);
+    }
+}
+
+function toggleTableContainer(container) {
+    setTableCollapsed(container, !container.classList.contains('collapsed'));
+}
+
+function initTableToggles() {
+    const collapsedState = getCollapsedTables();
+    document.querySelectorAll('.table-container[data-table-id]').forEach((container) => {
+        const tableId = container.dataset.tableId;
+        if (collapsedState[tableId]) {
+            setTableCollapsed(container, true);
+        }
+
+        container.querySelector('.table-toggle-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleTableContainer(container);
+        });
+
+        container.querySelector('.table-header')?.addEventListener('click', () => {
+            toggleTableContainer(container);
+        });
+    });
+}
+
+initTableToggles();

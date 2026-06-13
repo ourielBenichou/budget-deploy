@@ -15,7 +15,9 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-12-apk-download-v1';
+const APP_VERSION = '2026-06-13-render-stable-v1';
+const APK_DOWNLOAD_URL =
+    'https://raw.githubusercontent.com/ourielBenichou/budget-deploy/main/frontend/downloads/budget-app.apk';
 
 const app = express();
 app.use(cors());
@@ -46,7 +48,13 @@ async function bootstrapAdminUser() {
 }
 
 app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, version: APP_VERSION });
+    const mongoState = mongoose.connection.readyState;
+    const mongoOk = mongoState === 1;
+    res.status(mongoOk ? 200 : 503).json({
+        ok: mongoOk,
+        version: APP_VERSION,
+        mongo: mongoOk ? 'connected' : 'disconnected'
+    });
 });
 
 app.use('/api/auth', authRoutes);
@@ -202,6 +210,10 @@ app.get('/admin', (_req, res) => {
 
 app.get('/download', (_req, res) => {
     res.sendFile(path.join(frontendPath, 'download.html'));
+});
+
+app.get('/downloads/budget-app.apk', (_req, res) => {
+    res.redirect(302, APK_DOWNLOAD_URL);
 });
 
 app.get('*', (req, res, next) => {

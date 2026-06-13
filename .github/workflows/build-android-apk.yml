@@ -68,15 +68,3 @@ jobs:
           name: budget-app-apk
           path: frontend/downloads/budget-app.apk
           retention-days: 30
-
-      - name: Commit APK to repository
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add frontend/downloads/budget-app.apk
-          if git diff --staged --quiet; then
-            echo "APK unchanged"
-          else
-            git commit -m "Update Android APK download"
-            git push
-          fi

@@ -216,15 +216,71 @@
             align-self: start;
         }
 
-        .table-container h3 {
-            margin-top: 0;
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 0;
             padding-bottom: 12px;
-            font-size: 18px;
+            border-bottom: 2px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
         }
 
-        .income-box h3 { color: var(--primary); border-bottom: 2px solid var(--primary-light); }
-        .fixed-box h3 { color: var(--info); border-bottom: 2px solid var(--info-light); }
-        .variable-box h3 { color: var(--danger); border-bottom: 2px solid var(--danger-light); }
+        .table-container h3 {
+            margin: 0;
+            font-size: 18px;
+            flex: 1;
+        }
+
+        .income-box .table-header { border-bottom-color: var(--primary-light); }
+        .income-box h3 { color: var(--primary); }
+        .fixed-box .table-header { border-bottom-color: var(--info-light); }
+        .fixed-box h3 { color: var(--info); }
+        .variable-box .table-header { border-bottom-color: var(--danger-light); }
+        .variable-box h3 { color: var(--danger); }
+
+        .table-toggle-btn {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f8fafc;
+            color: #4a5568;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .table-toggle-btn:hover {
+            background: #eef2f7;
+            border-color: #cbd5e0;
+        }
+
+        .table-body-wrap {
+            overflow: hidden;
+            transition: max-height 0.25s ease, opacity 0.2s ease;
+            max-height: 2000px;
+            opacity: 1;
+        }
+
+        .table-container.collapsed .table-body-wrap {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        .table-container.collapsed .table-header {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
 
         .budget-table {
             width: 100%;
@@ -408,54 +464,69 @@
         </section>
 
         <section class="tables-grid">
-            <div class="table-container income-box">
-                <h3>הכנסות</h3>
-                <table class="budget-table">
-                    <thead>
-                        <tr>
-                            <th>שם</th>
-                            <th>מועד</th>
-                            <th>סכום</th>
-                            <th style="text-align: center;">פעולות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="incomes-list"></tbody>
-                </table>
+            <div class="table-container income-box" data-table-id="income">
+                <div class="table-header">
+                    <h3>הכנסות</h3>
+                    <button type="button" class="table-toggle-btn" aria-expanded="true" aria-label="כווץ טבלת הכנסות">−</button>
+                </div>
+                <div class="table-body-wrap">
+                    <table class="budget-table">
+                        <thead>
+                            <tr>
+                                <th>שם</th>
+                                <th>מועד</th>
+                                <th>סכום</th>
+                                <th style="text-align: center;">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomes-list"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="table-container fixed-box">
-                <h3>הוצאות קבועות</h3>
-                <table class="budget-table">
-                    <thead>
-                        <tr>
-                            <th>שם</th>
-                            <th>מועד</th>
-                            <th>סכום</th>
-                            <th style="text-align: center;">פעולות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fixed-expenses-list"></tbody>
-                </table>
+            <div class="table-container fixed-box" data-table-id="fixed">
+                <div class="table-header">
+                    <h3>הוצאות קבועות</h3>
+                    <button type="button" class="table-toggle-btn" aria-expanded="true" aria-label="כווץ טבלת הוצאות קבועות">−</button>
+                </div>
+                <div class="table-body-wrap">
+                    <table class="budget-table">
+                        <thead>
+                            <tr>
+                                <th>שם</th>
+                                <th>מועד</th>
+                                <th>סכום</th>
+                                <th style="text-align: center;">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fixed-expenses-list"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="table-container variable-box">
-                <h3>הוצאות משתנות (אשראי)</h3>
-                <table class="budget-table">
-                    <thead>
-                        <tr>
-                            <th>שם</th>
-                            <th>מועד</th>
-                            <th>סכום</th>
-                            <th style="text-align: center;">פעולות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="variable-expenses-list"></tbody>
-                </table>
+            <div class="table-container variable-box" data-table-id="variable">
+                <div class="table-header">
+                    <h3>הוצאות משתנות (אשראי)</h3>
+                    <button type="button" class="table-toggle-btn" aria-expanded="true" aria-label="כווץ טבלת הוצאות משתנות">−</button>
+                </div>
+                <div class="table-body-wrap">
+                    <table class="budget-table">
+                        <thead>
+                            <tr>
+                                <th>שם</th>
+                                <th>מועד</th>
+                                <th>סכום</th>
+                                <th style="text-align: center;">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="variable-expenses-list"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </main>
 
     <script type="module" src="./src/mobile.js"></script>
-    <script type="module" src="./src/main.js?v=4"></script>
+    <script type="module" src="./src/main.js?v=5"></script>
 </body>
 </html>
