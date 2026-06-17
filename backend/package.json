@@ -4,6 +4,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
+    "build:frontend": "node scripts/ensure-frontend-build.mjs",
+    "prestart": "npm run build:frontend",
     "start": "node server.js"
   },
   "dependencies": {
