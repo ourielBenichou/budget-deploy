@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
+const dist = path.join(root, 'dist');
 const www = path.join(root, 'www');
 
 function copyRecursive(source, target) {
@@ -28,16 +29,12 @@ if (fs.existsSync(www)) {
 
 fs.mkdirSync(www, { recursive: true });
 
-for (const file of ['index.html', 'login.html', 'app.html', 'admin.html', 'privacy.html', 'download.html', 'manifest.json']) {
-    const source = path.join(root, file);
-    if (fs.existsSync(source)) {
-        fs.copyFileSync(source, path.join(www, file));
-    }
+if (fs.existsSync(dist)) {
+    copyRecursive(dist, www);
+} else {
+    console.warn('dist/ not found — run npm run build first');
 }
 
-copyRecursive(path.join(root, 'src'), path.join(www, 'src'));
-copyRecursive(path.join(root, 'resources'), path.join(www, 'resources'));
-copyRecursive(path.join(root, 'public'), path.join(www, 'public'));
 copyRecursive(path.join(root, 'downloads'), path.join(www, 'downloads'));
 
 console.log('Mobile web assets prepared in www/');

@@ -1,3 +1,4 @@
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -15,8 +16,11 @@ import 'dotenv/config';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, '../frontend');
-const APP_VERSION = '2026-06-13-transaction-update-v1';
+const legacyFrontendPath = path.join(__dirname, '../frontend');
+const distPath = path.join(legacyFrontendPath, 'dist');
+const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
+const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
+const APP_VERSION = '2026-06-12-react-components-v1';
 const APK_DOWNLOAD_URL =
     'https://raw.githubusercontent.com/ourielBenichou/budget-deploy/main/frontend/downloads/budget-app.apk';
 
@@ -188,29 +192,46 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(frontendPath, {
+const staticOptions = {
     setHeaders(res, filePath) {
         if (filePath.endsWith('.apk')) {
             res.setHeader('Content-Type', 'application/vnd.android.package-archive');
             res.setHeader('Content-Disposition', 'attachment; filename="budget-app.apk"');
         }
     }
-}));
+};
+
+app.use(express.static(frontendPath, staticOptions));
+
+if (hasDistBuild) {
+    app.use('/src', express.static(path.join(legacyFrontendPath, 'src'), staticOptions));
+}
 
 app.get('/', (_req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 app.get('/app', (_req, res) => {
-    res.sendFile(path.join(frontendPath, 'app.html'));
+    if (hasDistBuild) {
+        return res.sendFile(path.join(distPath, 'index.html'));
+    }
+    res.sendFile(path.join(legacyFrontendPath, 'app.html'));
 });
 
-app.get('/admin', (_req, res) => {
-    res.sendFile(path.join(frontendPath, 'admin.html'));
+app.get(['/admin', '/admin.html'], (_req, res) => {
+    res.sendFile(path.join(legacyFrontendPath, 'admin.html'));
 });
 
-app.get('/download', (_req, res) => {
-    res.sendFile(path.join(frontendPath, 'download.html'));
+app.get(['/download', '/download.html'], (_req, res) => {
+    const downloadFile = hasDistBuild
+        ? path.join(distPath, 'download.html')
+        : path.join(legacyFrontendPath, 'download.html');
+
+    if (fs.existsSync(downloadFile)) {
+        return res.sendFile(downloadFile);
+    }
+
+    res.sendFile(path.join(legacyFrontendPath, 'download.html'));
 });
 
 app.get('/downloads/budget-app.apk', (_req, res) => {
@@ -221,15 +242,22 @@ app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
         return next();
     }
-    if (req.path === '/app.html') {
-        return res.sendFile(path.join(frontendPath, 'app.html'));
+
+    if (hasDistBuild && !path.extname(req.path)) {
+        return res.sendFile(path.join(distPath, 'index.html'));
     }
-    if (req.path === '/admin.html') {
-        return res.sendFile(path.join(frontendPath, 'admin.html'));
+
+    if (!hasDistBuild && req.path === '/app.html') {
+        return res.sendFile(path.join(legacyFrontendPath, 'app.html'));
     }
-    if (req.path === '/download.html') {
-        return res.sendFile(path.join(frontendPath, 'download.html'));
+
+    if (req.path === '/login.html') {
+        if (hasDistBuild) {
+            return res.sendFile(path.join(distPath, 'index.html'));
+        }
+        return res.sendFile(path.join(legacyFrontendPath, 'login.html'));
     }
+
     next();
 });
 

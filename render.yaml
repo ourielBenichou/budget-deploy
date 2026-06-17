@@ -3,7 +3,7 @@ services:
     name: budget-deploy2
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install && cd ../frontend && npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

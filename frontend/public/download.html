@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2ec4b6">
+    <title>הורדת אפליקציה - ניהול תקציב</title>
+    <style>
+        :root {
+            --primary: #2ec4b6;
+            --primary-dark: #24a195;
+            --text-dark: #333333;
+            --text-muted: #888888;
+            --bg-main: #f4f6f9;
+            --border-color: #e1e4e8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #f4f6f9 0%, #e2fbf5 100%);
+            color: var(--text-dark);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .app-icon {
+            width: 96px;
+            height: 96px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .btn-download {
+            display: inline-block;
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        .btn-download:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            color: #4a5568;
+            text-decoration: none;
+            margin-top: 8px;
+        }
+
+        .steps {
+            text-align: right;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-top: 24px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .steps h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .unavailable {
+            display: none;
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="/resources/icon.png" alt="אייקון האפליקציה" class="app-icon">
+        <h1>ניהול תקציב</h1>
+        <p class="subtitle">הורד את האפליקציה ל-Android והתקן ישירות על המכשיר</p>
+
+        <div id="unavailable-msg" class="unavailable">
+            קובץ ההורדה עדיין נבנה. נסה שוב בעוד כמה דקות.
+        </div>
+
+        <a id="download-btn" href="https://raw.githubusercontent.com/ourielBenichou/budget-deploy/main/frontend/downloads/budget-app.apk" class="btn-download" download="budget-app.apk">
+            הורד ל-Android (APK)
+        </a>
+
+        <a href="/login.html" class="btn-secondary">או המשך דרך הדפדפן</a>
+
+        <div class="steps">
+            <h2>איך מתקינים?</h2>
+            <ol>
+                <li>לחץ על "הורד ל-Android"</li>
+                <li>אם מופיעה אזהרה — אשר התקנה ממקור לא ידוע</li>
+                <li>פתח את הקובץ שהורד והתקן</li>
+                <li>התחבר עם החשבון שלך (לאחר אישור המנהל)</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const APK_LOCAL = '/downloads/budget-app.apk';
+        const downloadBtn = document.getElementById('download-btn');
+        const unavailableMsg = document.getElementById('unavailable-msg');
+
+        fetch(APK_LOCAL, { method: 'HEAD' })
+            .then((response) => {
+                if (response.ok) {
+                    downloadBtn.href = APK_LOCAL;
+                }
+            })
+            .catch(() => {});
+    </script>
+</body>
+</html>
