@@ -11,118 +11,20 @@
         * { box-sizing: border-box; }
 
         .login-page {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(145deg, #0b1f2e 0%, #123547 35%, #1a4d5c 65%, #0d3d4a 100%);
-            color: var(--text-dark);
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-bg {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .login-bg__orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.55;
-            animation: login-float 18s ease-in-out infinite;
-        }
-
-        .login-bg__orb--1 {
-            width: 420px;
-            height: 420px;
-            background: radial-gradient(circle, #2ec4b6 0%, transparent 70%);
-            top: -120px;
-            right: -80px;
-            animation-delay: 0s;
-        }
-
-        .login-bg__orb--2 {
-            width: 360px;
-            height: 360px;
-            background: radial-gradient(circle, #3d8bfd 0%, transparent 70%);
-            bottom: -100px;
-            left: -60px;
-            animation-delay: -6s;
-            opacity: 0.4;
-        }
-
-        .login-bg__orb--3 {
-            width: 280px;
-            height: 280px;
-            background: radial-gradient(circle, #7ee8dc 0%, transparent 70%);
-            top: 40%;
-            left: 55%;
-            animation-delay: -12s;
-            opacity: 0.35;
-        }
-
-        .login-bg__grid {
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-            background-size: 48px 48px;
-            mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 100%);
-        }
-
-        .login-bg__chart {
-            position: absolute;
-            bottom: 0;
-            left: 0;
             width: 100%;
-            height: 55%;
-            opacity: 0.7;
-        }
-
-        @keyframes login-float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -25px) scale(1.05); }
-            66% { transform: translate(-20px, 20px) scale(0.95); }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .login-bg__orb {
-                animation: none;
-            }
+            max-width: 420px;
         }
 
         .login-card {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(255, 255, 255, 0.65);
             width: 100%;
-            max-width: 420px;
             padding: 32px;
             border-radius: 16px;
-            box-shadow:
-                0 24px 64px rgba(0, 20, 40, 0.28),
-                0 0 0 1px rgba(46, 196, 182, 0.12);
         }
 
-        h1 {
+        .login-card h1 {
             margin: 0 0 8px 0;
             font-size: 26px;
             text-align: center;
-            background: linear-gradient(135deg, #1a4d5c, #2ec4b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         .subtitle {

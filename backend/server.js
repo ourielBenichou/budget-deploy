@@ -20,7 +20,7 @@ const legacyFrontendPath = path.join(__dirname, '../frontend');
 const distPath = path.join(legacyFrontendPath, 'dist');
 const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
 const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
-const APP_VERSION = '2026-06-17-fix-frontend-build-v1';
+const APP_VERSION = '2026-06-17-unified-background-v1';
 
 if (!hasDistBuild) {
     console.warn('WARNING: frontend/dist not found — serving dev index.html (app may appear blank). Run frontend build.');

@@ -25,15 +25,79 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-main);
+            background: linear-gradient(145deg, #0b1f2e 0%, #123547 35%, #1a4d5c 65%, #0d3d4a 100%);
             color: var(--text-dark);
             margin: 0;
             padding: 20px;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .app-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-bg__orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.55;
+            animation: app-bg-float 18s ease-in-out infinite;
+        }
+
+        .app-bg__orb--1 {
+            width: 420px;
+            height: 420px;
+            background: radial-gradient(circle, #2ec4b6 0%, transparent 70%);
+            top: -120px;
+            right: -80px;
+        }
+
+        .app-bg__orb--2 {
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, #3d8bfd 0%, transparent 70%);
+            bottom: -100px;
+            left: -60px;
+            animation-delay: -6s;
+            opacity: 0.4;
+        }
+
+        .app-bg__orb--3 {
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, #7ee8dc 0%, transparent 70%);
+            top: 40%;
+            left: 55%;
+            animation-delay: -12s;
+            opacity: 0.35;
+        }
+
+        .app-bg__grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 100%);
+        }
+
+        @keyframes app-bg-float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -25px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
         }
 
         .container {
             max-width: 1100px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         .top-bar {
@@ -43,11 +107,21 @@
             margin-bottom: 24px;
             gap: 12px;
             flex-wrap: wrap;
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            box-shadow: 0 12px 40px rgba(0, 20, 40, 0.14);
         }
 
         h1 {
             margin: 0;
             font-size: 26px;
+            background: linear-gradient(135deg, #1a4d5c, #2ec4b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .actions {
@@ -79,9 +153,11 @@
         .btn-primary:hover { background: var(--primary-dark); }
 
         .card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0, 20, 40, 0.14);
             padding: 20px;
         }
 
@@ -190,7 +266,8 @@
         }
 
         .modal {
-            background: white;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(18px);
             width: 100%;
             max-width: 900px;
             max-height: 90vh;
@@ -267,6 +344,12 @@
     </style>
 </head>
 <body>
+    <div class="app-bg" aria-hidden="true">
+        <div class="app-bg__orb app-bg__orb--1"></div>
+        <div class="app-bg__orb app-bg__orb--2"></div>
+        <div class="app-bg__orb app-bg__orb--3"></div>
+        <div class="app-bg__grid"></div>
+    </div>
     <div class="container">
         <div class="top-bar">
             <h1>ניהול משתמשים</h1>

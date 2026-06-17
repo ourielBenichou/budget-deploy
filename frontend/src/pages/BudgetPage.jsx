@@ -7,6 +7,7 @@ import TransactionForm from '../components/TransactionForm.jsx';
 import TransactionTablesGrid from '../components/TransactionTablesGrid.jsx';
 import UserBar from '../components/UserBar.jsx';
 import { useBudgetData } from '../hooks/useBudgetData.js';
+import '../styles/app-background.css';
 import '../styles/app.css';
 
 export default function BudgetPage() {
