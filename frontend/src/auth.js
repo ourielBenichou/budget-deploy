@@ -1,16 +1,33 @@
 export const PRODUCTION_API = 'https://budget-deploy2.onrender.com/api';
 
+function isLocalHost() {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+}
+
 export function isNativeApp() {
     return window.Capacitor?.isNativePlatform?.() === true;
 }
 
 export function getApiBase() {
+    if (import.meta.env.VITE_API_BASE) {
+        return import.meta.env.VITE_API_BASE;
+    }
+
     if (isNativeApp()) {
         return PRODUCTION_API;
     }
-    if (window.location.hostname === 'localhost') {
-        return 'http://localhost:5000/api';
+
+    if (isLocalHost()) {
+        const port = window.location.port;
+        // Vite dev server — use proxy to local backend
+        if (port && port !== '5000') {
+            return '/api';
+        }
+
+        return `${window.location.protocol}//${window.location.hostname}:5000/api`;
     }
+
     return `${window.location.origin}/api`;
 }
 
