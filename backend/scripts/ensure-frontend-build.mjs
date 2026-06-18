@@ -4,15 +4,33 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const frontendDir = path.join(__dirname, '../../frontend');
-const distIndex = path.join(frontendDir, 'dist/index.html');
+const backendRoot = path.join(__dirname, '..');
+const frontendRoot = path.join(backendRoot, '..', 'frontend');
+const stagedIndex = path.join(backendRoot, 'public/index.html');
+const distIndex = path.join(frontendRoot, 'dist/index.html');
+const stageScript = path.join(__dirname, 'stage-frontend.mjs');
 
-if (fs.existsSync(distIndex)) {
-    console.log('Frontend build found at frontend/dist');
+function runStage() {
+    execSync(`node "${stageScript}"`, { stdio: 'inherit' });
+}
+
+if (fs.existsSync(stagedIndex)) {
+    console.log('Staged frontend found at backend/public');
     process.exit(0);
 }
 
-console.log('Frontend dist missing — building Vite bundle...');
+if (fs.existsSync(distIndex)) {
+    console.log('Staging existing frontend/dist into backend/public...');
+    runStage();
+    process.exit(0);
+}
+
+if (!fs.existsSync(frontendRoot)) {
+    console.warn('Frontend source not found — skipping frontend staging');
+    process.exit(0);
+}
+
+console.log('Frontend build missing — building and staging Vite bundle...');
 
 const env = {
     ...process.env,
@@ -20,14 +38,16 @@ const env = {
 };
 
 execSync('npm install && npm run build', {
-    cwd: frontendDir,
+    cwd: frontendRoot,
     stdio: 'inherit',
     env
 });
 
-if (!fs.existsSync(distIndex)) {
-    console.error('Frontend build failed: frontend/dist/index.html not created');
+runStage();
+
+if (!fs.existsSync(stagedIndex)) {
+    console.error('Frontend staging failed: backend/public/index.html not created');
     process.exit(1);
 }
 
-console.log('Frontend build completed successfully');
+console.log('Frontend build and staging completed successfully');

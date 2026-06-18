@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "build:frontend": "node scripts/ensure-frontend-build.mjs",
-    "prestart": "npm run build:frontend",
+    "stage:frontend": "node scripts/stage-frontend.mjs",
+    "prestart": "node scripts/ensure-frontend-build.mjs",
     "start": "node server.js"
   },
   "dependencies": {

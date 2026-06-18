@@ -17,13 +17,27 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const legacyFrontendPath = path.join(__dirname, '../frontend');
-const distPath = path.join(legacyFrontendPath, 'dist');
+const stagedPath = path.join(__dirname, 'public');
+const distPath = fs.existsSync(path.join(stagedPath, 'index.html'))
+    ? stagedPath
+    : path.join(legacyFrontendPath, 'dist');
 const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
 const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
-const APP_VERSION = '2026-06-17-sky-blue-background-v1';
+const APP_VERSION = '2026-06-18-fix-render-deploy-v1';
+
+function resolveFrontendFile(...parts) {
+    const stagedFile = path.join(stagedPath, ...parts);
+    if (fs.existsSync(stagedFile)) {
+        return stagedFile;
+    }
+
+    return path.join(legacyFrontendPath, ...parts);
+}
 
 if (!hasDistBuild) {
-    console.warn('WARNING: frontend/dist not found — serving dev index.html (app may appear blank). Run frontend build.');
+    console.warn('WARNING: production frontend build not found — app may appear blank. Run frontend build and stage script.');
+} else if (distPath === stagedPath) {
+    console.log('Serving React build from backend/public');
 } else {
     console.log('Serving React build from frontend/dist');
 }
@@ -209,8 +223,12 @@ const staticOptions = {
 
 app.use(express.static(frontendPath, staticOptions));
 
-if (hasDistBuild) {
-    app.use('/src', express.static(path.join(legacyFrontendPath, 'src'), staticOptions));
+const srcStaticPath = fs.existsSync(path.join(stagedPath, 'src'))
+    ? path.join(stagedPath, 'src')
+    : path.join(legacyFrontendPath, 'src');
+
+if (fs.existsSync(srcStaticPath)) {
+    app.use('/src', express.static(srcStaticPath, staticOptions));
 }
 
 app.get('/', (_req, res) => {
@@ -225,19 +243,12 @@ app.get('/app', (_req, res) => {
 });
 
 app.get(['/admin', '/admin.html'], (_req, res) => {
-    res.sendFile(path.join(legacyFrontendPath, 'admin.html'));
+    res.sendFile(resolveFrontendFile('admin.html'));
 });
 
 app.get(['/download', '/download.html'], (_req, res) => {
-    const downloadFile = hasDistBuild
-        ? path.join(distPath, 'download.html')
-        : path.join(legacyFrontendPath, 'download.html');
-
-    if (fs.existsSync(downloadFile)) {
-        return res.sendFile(downloadFile);
-    }
-
-    res.sendFile(path.join(legacyFrontendPath, 'download.html'));
+    const downloadFile = resolveFrontendFile('download.html');
+    res.sendFile(downloadFile);
 });
 
 app.get('/downloads/budget-app.apk', (_req, res) => {
