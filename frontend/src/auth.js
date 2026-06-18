@@ -10,8 +10,9 @@ export function isNativeApp() {
 }
 
 export function getApiBase() {
-    if (import.meta.env.VITE_API_BASE) {
-        return import.meta.env.VITE_API_BASE;
+    const viteApiBase = import.meta.env?.VITE_API_BASE;
+    if (viteApiBase) {
+        return viteApiBase;
     }
 
     if (isNativeApp()) {
@@ -55,7 +56,7 @@ export function clearAuth() {
 
 export function requireAuth() {
     if (!getToken()) {
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return false;
     }
     return true;
@@ -73,7 +74,7 @@ export function authHeaders(extra = {}) {
 export function handleAuthError(response) {
     if (response.status === 401) {
         clearAuth();
-        window.location.href = '/login.html';
+        window.location.href = '/login';
         return true;
     }
     return false;

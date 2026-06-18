@@ -14,7 +14,7 @@ if (!requireAuth()) {
 
 const authUser = getAuthUser();
 if (authUser?.role !== 'admin') {
-    window.location.href = '/app.html';
+    window.location.href = '/app';
     throw new Error('Not admin');
 }
 
@@ -67,7 +67,7 @@ async function apiFetch(url, options = {}) {
 
     if (handleAuthError(response)) return response;
     if (response.status === 403) {
-        window.location.href = '/app.html';
+        window.location.href = '/app';
     }
     return response;
 }
