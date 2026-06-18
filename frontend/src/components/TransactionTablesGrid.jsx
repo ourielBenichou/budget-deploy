@@ -5,18 +5,21 @@ const TABLE_CONFIG = [
         tableId: 'income',
         title: 'הכנסות',
         boxClassName: 'income-box',
+        sumVariant: 'income',
         types: ['income', 'one-time-income']
     },
     {
         tableId: 'fixed',
         title: 'הוצאות קבועות',
         boxClassName: 'fixed-box',
+        sumVariant: 'fixed',
         types: ['fixed-expense']
     },
     {
         tableId: 'variable',
         title: 'הוצאות משתנות (אשראי)',
         boxClassName: 'variable-box',
+        sumVariant: 'variable',
         types: ['variable-expense']
     }
 ];
@@ -39,6 +42,7 @@ export default function TransactionTablesGrid({
                     tableId={config.tableId}
                     title={config.title}
                     boxClassName={config.boxClassName}
+                    sumVariant={config.sumVariant}
                     transactions={transactions.filter(item => config.types.includes(item.type))}
                     collapsed={Boolean(collapsedTables[config.tableId])}
                     editingId={editingId}

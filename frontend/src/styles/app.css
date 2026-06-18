@@ -222,6 +222,26 @@
             user-select: none;
         }
 
+        .table-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .table-sum {
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .table-sum--income { color: var(--primary); }
+        .table-sum--fixed { color: var(--info); }
+        .table-sum--variable { color: var(--danger); }
+
         .table-container h3 {
             margin: 0;
             font-size: 18px;

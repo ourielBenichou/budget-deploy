@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import TransactionRow from './TransactionRow.jsx';
 
 export default function CollapsibleTransactionTable({
     tableId,
     title,
     boxClassName,
+    sumVariant = 'default',
     transactions,
     collapsed,
     editingId,
@@ -13,22 +15,32 @@ export default function CollapsibleTransactionTable({
     onDelete,
     onSave
 }) {
+    const total = useMemo(
+        () => transactions.reduce((sum, transaction) => sum + (Number(transaction.amount) || 0), 0),
+        [transactions]
+    );
+
     return (
         <div className={`table-container ${boxClassName}${collapsed ? ' collapsed' : ''}`}>
             <div className="table-header" onClick={() => onToggleCollapsed(tableId)}>
                 <h3>{title}</h3>
-                <button
-                    type="button"
-                    className="table-toggle-btn"
-                    aria-expanded={!collapsed}
-                    aria-label={collapsed ? 'פתח טבלה' : 'כווץ טבלה'}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onToggleCollapsed(tableId);
-                    }}
-                >
-                    {collapsed ? '+' : '−'}
-                </button>
+                <div className="table-header-actions">
+                    <span className={`table-sum table-sum--${sumVariant}`}>
+                        {total.toLocaleString()} ₪
+                    </span>
+                    <button
+                        type="button"
+                        className="table-toggle-btn"
+                        aria-expanded={!collapsed}
+                        aria-label={collapsed ? 'פתח טבלה' : 'כווץ טבלה'}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onToggleCollapsed(tableId);
+                        }}
+                    >
+                        {collapsed ? '+' : '−'}
+                    </button>
+                </div>
             </div>
             <div className="table-body-wrap">
                 <table className="budget-table">

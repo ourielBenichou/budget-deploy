@@ -23,7 +23,7 @@ const distPath = fs.existsSync(path.join(stagedPath, 'index.html'))
     : path.join(legacyFrontendPath, 'dist');
 const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
 const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
-const APP_VERSION = '2026-06-18-fix-render-deploy-v1';
+const APP_VERSION = '2026-06-18-table-sum-v1';
 
 function resolveFrontendFile(...parts) {
     const stagedFile = path.join(stagedPath, ...parts);
