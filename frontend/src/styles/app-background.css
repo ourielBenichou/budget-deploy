@@ -2,7 +2,7 @@
     position: relative;
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(145deg, #0b1f2e 0%, #123547 35%, #1a4d5c 65%, #0d3d4a 100%);
+    background: linear-gradient(155deg, #e8f6ff 0%, #c8ebff 28%, #9ed8ff 52%, #b8e6ff 78%, #dff3ff 100%);
     color: #333333;
     overflow-x: hidden;
 }
@@ -35,50 +35,71 @@
     z-index: 0;
 }
 
+.app-bg__shine {
+    position: absolute;
+    top: -20%;
+    left: 15%;
+    width: 70%;
+    height: 55%;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.75) 0%, transparent 68%);
+    opacity: 0.9;
+}
+
 .app-bg__orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(70px);
-    opacity: 0.55;
-    animation: app-bg-float 18s ease-in-out infinite;
+    filter: blur(65px);
+    animation: app-bg-float 20s ease-in-out infinite;
 }
 
 .app-bg__orb--1 {
-    width: 420px;
-    height: 420px;
-    background: radial-gradient(circle, #2ec4b6 0%, transparent 70%);
-    top: -120px;
-    right: -80px;
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(circle, #38bdf8 0%, transparent 68%);
+    top: -140px;
+    right: -100px;
+    opacity: 0.7;
 }
 
 .app-bg__orb--2 {
-    width: 360px;
-    height: 360px;
-    background: radial-gradient(circle, #3d8bfd 0%, transparent 70%);
-    bottom: -100px;
-    left: -60px;
-    animation-delay: -6s;
-    opacity: 0.4;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, #60a5fa 0%, transparent 68%);
+    bottom: -120px;
+    left: -80px;
+    animation-delay: -7s;
+    opacity: 0.55;
 }
 
 .app-bg__orb--3 {
-    width: 280px;
-    height: 280px;
-    background: radial-gradient(circle, #7ee8dc 0%, transparent 70%);
-    top: 40%;
-    left: 55%;
-    animation-delay: -12s;
-    opacity: 0.35;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, #7dd3fc 0%, transparent 68%);
+    top: 38%;
+    left: 52%;
+    animation-delay: -13s;
+    opacity: 0.5;
+}
+
+.app-bg__orb--4 {
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, #ffffff 0%, transparent 70%);
+    top: 12%;
+    left: 8%;
+    animation-delay: -4s;
+    opacity: 0.85;
+    filter: blur(45px);
 }
 
 .app-bg__grid {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 100%);
+        linear-gradient(rgba(56, 189, 248, 0.14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.14) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 85% 75% at 50% 40%, black 15%, transparent 100%);
 }
 
 .app-bg__chart {
@@ -86,14 +107,14 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 55%;
-    opacity: 0.65;
+    height: 50%;
+    opacity: 0.85;
 }
 
 @keyframes app-bg-float {
     0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(30px, -25px) scale(1.05); }
-    66% { transform: translate(-20px, 20px) scale(0.95); }
+    33% { transform: translate(28px, -22px) scale(1.06); }
+    66% { transform: translate(-18px, 18px) scale(0.96); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -103,17 +124,17 @@
 }
 
 .glass-panel {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
     box-shadow:
-        0 12px 40px rgba(0, 20, 40, 0.14),
-        0 0 0 1px rgba(46, 196, 182, 0.08);
+        0 14px 44px rgba(14, 116, 184, 0.14),
+        0 0 0 1px rgba(56, 189, 248, 0.18);
 }
 
 .gradient-title {
-    background: linear-gradient(135deg, #1a4d5c, #2ec4b6);
+    background: linear-gradient(135deg, #0369a1, #0ea5e9, #38bdf8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

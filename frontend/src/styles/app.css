@@ -32,13 +32,13 @@
         .table-container,
         .user-bar,
         .header-area {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.65);
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
             box-shadow:
-                0 12px 40px rgba(0, 20, 40, 0.14),
-                0 0 0 1px rgba(46, 196, 182, 0.08);
+                0 14px 44px rgba(14, 116, 184, 0.14),
+                0 0 0 1px rgba(56, 189, 248, 0.18);
         }
 
         .header-area {
@@ -54,11 +54,11 @@
             border-bottom: 3px solid var(--primary);
             padding-bottom: 8px;
             width: fit-content;
-            background: linear-gradient(135deg, #1a4d5c, #2ec4b6);
+            background: linear-gradient(135deg, #0369a1, #0ea5e9, #38bdf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            border-bottom-color: rgba(46, 196, 182, 0.35);
+            border-bottom-color: rgba(14, 165, 233, 0.35);
         }
 
         .month-selector-wrapper {
