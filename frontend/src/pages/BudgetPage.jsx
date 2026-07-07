@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CashFlowChart from '../components/CashFlowChart.jsx';
-import MonthSelector from '../components/MonthSelector.jsx';
-import SummaryCards from '../components/SummaryCards.jsx';
-import TransactionForm from '../components/TransactionForm.jsx';
-import TransactionTablesGrid from '../components/TransactionTablesGrid.jsx';
-import UserBar from '../components/UserBar.jsx';
+import CashFlowChart from '../components/budget/CashFlowChart.jsx';
+import MonthSelector from '../components/budget/MonthSelector.jsx';
+import SummaryCards from '../components/budget/SummaryCards.jsx';
+import TransactionForm from '../components/budget/TransactionForm.jsx';
+import TransactionTablesGrid from '../components/budget/TransactionTablesGrid.jsx';
+import UserBar from '../components/common/UserBar.jsx';
 import { useBudgetData } from '../hooks/useBudgetData.js';
 import '../styles/app-background.css';
 import '../styles/app.css';

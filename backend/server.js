@@ -24,7 +24,7 @@ const distPath = fs.existsSync(path.join(stagedPath, 'index.html'))
     : path.join(legacyFrontendPath, 'dist');
 const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
 const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
-const APP_VERSION = '2026-07-07-carry-balance-v1';
+const APP_VERSION = '2026-07-07-react-components-v1';
 
 function resolveFrontendFile(...parts) {
     const stagedFile = path.join(stagedPath, ...parts);
@@ -255,11 +255,14 @@ app.get('/app', (_req, res) => {
     if (hasDistBuild) {
         return res.sendFile(path.join(distPath, 'index.html'));
     }
-    res.sendFile(path.join(legacyFrontendPath, 'app.html'));
+    res.status(404).send('Frontend build not found');
 });
 
 app.get(['/admin', '/admin.html'], (_req, res) => {
-    res.sendFile(resolveFrontendFile('admin.html'));
+    if (hasDistBuild) {
+        return res.sendFile(path.join(distPath, 'index.html'));
+    }
+    res.status(404).send('Frontend build not found');
 });
 
 app.get(['/download', '/download.html'], (_req, res) => {
@@ -280,15 +283,8 @@ app.get('*', (req, res, next) => {
         return res.sendFile(path.join(distPath, 'index.html'));
     }
 
-    if (!hasDistBuild && req.path === '/app.html') {
-        return res.sendFile(path.join(legacyFrontendPath, 'app.html'));
-    }
-
-    if (req.path === '/login.html') {
-        if (hasDistBuild) {
-            return res.sendFile(path.join(distPath, 'index.html'));
-        }
-        return res.sendFile(path.join(legacyFrontendPath, 'login.html'));
+    if (req.path === '/login.html' && hasDistBuild) {
+        return res.sendFile(path.join(distPath, 'index.html'));
     }
 
     next();

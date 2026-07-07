@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { clearAuth } from '../auth.js';
+import { useNavigate, Link } from 'react-router-dom';
+import { clearAuth } from '../../services/auth.js';
 
 export default function UserBar({ user }) {
     const navigate = useNavigate();
@@ -14,7 +14,7 @@ export default function UserBar({ user }) {
             <span>{user?.displayName ? `שלום, ${user.displayName}` : 'שלום'}</span>
             <div className="user-actions">
                 {user?.role === 'admin' && (
-                    <a href="/admin.html" className="btn-admin">ניהול משתמשים</a>
+                    <Link to="/admin" className="btn-admin">ניהול משתמשים</Link>
                 )}
                 <button type="button" className="btn-logout" onClick={handleLogout}>
                     יציאה

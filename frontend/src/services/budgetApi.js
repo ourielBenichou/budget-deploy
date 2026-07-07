@@ -1,4 +1,4 @@
-import { authHeaders, clearAuth } from '../auth.js';
+import { authHeaders, clearAuth } from './auth.js';
 
 export function createBudgetApi(apiBase, onUnauthorized) {
     async function apiFetch(url, options = {}) {

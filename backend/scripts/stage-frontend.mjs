@@ -36,16 +36,4 @@ if (fs.existsSync(publicDir)) {
 fs.mkdirSync(publicDir, { recursive: true });
 copyRecursive(distDir, publicDir);
 
-const srcDir = path.join(frontendRoot, 'src');
-if (fs.existsSync(srcDir)) {
-    copyRecursive(srcDir, path.join(publicDir, 'src'));
-}
-
-for (const file of ['admin.html']) {
-    const source = path.join(frontendRoot, file);
-    if (fs.existsSync(source)) {
-        fs.copyFileSync(source, path.join(publicDir, file));
-    }
-}
-
 console.log('Frontend assets staged in backend/public');

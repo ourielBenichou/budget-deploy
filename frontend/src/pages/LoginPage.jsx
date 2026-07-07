@@ -1,34 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getApiBase, getToken, setAuth } from '../auth.js';
-import { validatePassword } from '../password.js';
+import AuthModeToggle from '../components/auth/AuthModeToggle.jsx';
+import CredentialsForm from '../components/auth/CredentialsForm.jsx';
+import SocialLoginSection from '../components/auth/SocialLoginSection.jsx';
+import { getApiBase, getToken, setAuth } from '../services/auth.js';
+import { validatePassword } from '../utils/password.js';
 import { translateAuthError } from '../utils/translateAuthError.js';
-import { createBudgetApi } from '../utils/budgetApi.js';
 import '../styles/app-background.css';
 import '../styles/login.css';
-
-function loadScript(src, id) {
-    if (document.getElementById(id)) {
-        return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.id = id;
-        script.src = src;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load ${src}`));
-        document.head.appendChild(script);
-    });
-}
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const apiBase = getApiBase();
-    const api = createBudgetApi(apiBase, () => navigate('/login', { replace: true }));
-    const appleInitialized = useRef(false);
 
     const [isRegisterMode, setIsRegisterMode] = useState(false);
     const [error, setError] = useState('');
@@ -63,83 +46,20 @@ export default function LoginPage() {
         navigate('/app', { replace: true });
     };
 
-    useEffect(() => {
-        let cancelled = false;
-
-        async function initSocialLogin() {
-            try {
-                await Promise.all([
-                    loadScript('https://accounts.google.com/gsi/client', 'google-gsi'),
-                    loadScript('https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js', 'apple-auth-js')
-                ]);
-
-                const response = await api.fetchAuthConfig();
-                const config = await response.json();
-
-                let hasGoogle = false;
-                let hasApple = false;
-
-                if (config.googleClientId && window.google?.accounts?.id) {
-                    window.google.accounts.id.initialize({
-                        client_id: config.googleClientId,
-                        callback: async (credentialResponse) => {
-                            setError('');
-                            setSuccess('');
-                            try {
-                                const authResponse = await fetch(`${apiBase}/auth/google`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ credential: credentialResponse.credential })
-                                });
-                                await handleSocialAuthResponse(authResponse);
-                            } catch {
-                                setError('שגיאת רשת בהתחברות Google');
-                            }
-                        }
-                    });
-
-                    const googleButton = document.getElementById('google-btn');
-                    if (googleButton) {
-                        googleButton.innerHTML = '';
-                        window.google.accounts.id.renderButton(googleButton, {
-                            theme: 'outline',
-                            size: 'large',
-                            width: 356,
-                            locale: 'he'
-                        });
-                    }
-                    hasGoogle = true;
-                }
-
-                if (config.appleClientId && window.AppleID?.auth && !appleInitialized.current) {
-                    window.AppleID.auth.init({
-                        clientId: config.appleClientId,
-                        scope: 'name email',
-                        redirectURI: `${window.location.origin}/login`,
-                        usePopup: true
-                    });
-                    appleInitialized.current = true;
-                    hasApple = true;
-                }
-
-                if (!cancelled) {
-                    setShowApple(hasApple);
-                    setShowSocial(hasGoogle || hasApple);
-                }
-            } catch {
-                if (!cancelled) {
-                    setShowSocial(false);
-                    setShowApple(false);
-                }
-            }
+    const handleGoogleAuth = useCallback(async (credentialResponse) => {
+        setError('');
+        setSuccess('');
+        try {
+            const authResponse = await fetch(`${apiBase}/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: credentialResponse.credential })
+            });
+            await handleSocialAuthResponse(authResponse);
+        } catch {
+            setError('שגיאת רשת בהתחברות Google');
         }
-
-        initSocialLogin();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [api, apiBase]);
+    }, [apiBase]);
 
     const handleAppleLogin = async () => {
         setError('');
@@ -224,6 +144,12 @@ export default function LoginPage() {
         }
     };
 
+    const toggleMode = () => {
+        setIsRegisterMode(current => !current);
+        setError('');
+        setSuccess('');
+    };
+
     return (
         <div className={`login-page${isRegisterMode ? ' register-mode' : ''}`}>
             <div className="login-card glass-panel">
@@ -236,92 +162,42 @@ export default function LoginPage() {
                 {success && <div className="success-msg" style={{ display: 'block' }}>{success}</div>}
 
                 {showSocial && (
-                    <div className="social-login">
-                        <p className="social-heading">התחברות מהירה</p>
-                        <div id="google-btn" />
-                        {showApple && (
-                            <button type="button" className="btn-apple" onClick={handleAppleLogin}>
-                                &#63743; התחבר עם Apple
-                            </button>
-                        )}
-                    </div>
+                    <>
+                        <SocialLoginSection
+                            apiBase={apiBase}
+                            showApple={showApple}
+                            onGoogleAuth={handleGoogleAuth}
+                            onAppleAuth={handleAppleLogin}
+                            onVisibilityChange={(hasSocial, hasAppleButton) => {
+                                setShowSocial(hasSocial);
+                                setShowApple(hasAppleButton);
+                            }}
+                        />
+                        <div className="divider">או עם שם משתמש וסיסמה</div>
+                    </>
                 )}
-
-                {showSocial && <div className="divider">או עם שם משתמש וסיסמה</div>}
 
                 <p className="local-auth-heading login-fields">התחברות עם שם משתמש</p>
                 <p className="local-auth-heading register-fields">הרשמה עם שם משתמש</p>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group register-fields">
-                        <label htmlFor="register-username">שם משתמש</label>
-                        <input
-                            type="text"
-                            id="register-username"
-                            value={registerUsername}
-                            onChange={(event) => setRegisterUsername(event.target.value)}
-                            required={isRegisterMode}
-                        />
-                    </div>
+                <CredentialsForm
+                    isRegisterMode={isRegisterMode}
+                    loginUsername={loginUsername}
+                    registerUsername={registerUsername}
+                    registerEmail={registerEmail}
+                    password={password}
+                    onLoginUsernameChange={setLoginUsername}
+                    onRegisterUsernameChange={setRegisterUsername}
+                    onRegisterEmailChange={setRegisterEmail}
+                    onPasswordChange={setPassword}
+                    onSubmit={handleSubmit}
+                />
 
-                    <div className="form-group login-fields">
-                        <label htmlFor="login-username">שם משתמש או אימייל</label>
-                        <input
-                            type="text"
-                            id="login-username"
-                            value={loginUsername}
-                            onChange={(event) => setLoginUsername(event.target.value)}
-                            required={!isRegisterMode}
-                        />
-                    </div>
-
-                    <div className="form-group register-fields">
-                        <label htmlFor="register-email">אימייל</label>
-                        <input
-                            type="email"
-                            id="register-email"
-                            value={registerEmail}
-                            onChange={(event) => setRegisterEmail(event.target.value)}
-                            required={isRegisterMode}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="login-password">סיסמה</label>
-                        <input
-                            type="password"
-                            id="login-password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            required
-                        />
-                        <p className="password-hint register-fields">
-                            הסיסמה חייבת להכיל לפחות 6 תווים, אות גדולה, אות קטנה ומספר.
-                        </p>
-                    </div>
-
-                    <button type="submit" className="btn-primary">
-                        {isRegisterMode ? 'שלח בקשה' : 'התחבר'}
-                    </button>
-                </form>
-
-                <div className="toggle-mode">
-                    <span>{isRegisterMode ? 'יש לך כבר חשבון?' : 'אין לך חשבון?'}</span>{' '}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsRegisterMode(current => !current);
-                            setError('');
-                            setSuccess('');
-                        }}
-                    >
-                        {isRegisterMode ? 'התחבר כאן' : 'שלח בקשה להרשמה'}
-                    </button>
-                </div>
+                <AuthModeToggle isRegisterMode={isRegisterMode} onToggle={toggleMode} />
 
                 <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px' }}>
                     <Link to="/download.html" style={{ color: '#24a195', textDecoration: 'none' }}>
-                        הורדת אפליקציה ל-Android
+                        הוספת האפליקציה למסך הבית
                     </Link>
                 </p>
             </div>

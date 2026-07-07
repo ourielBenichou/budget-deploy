@@ -2,7 +2,7 @@
   "name": "ניהול תקציב",
   "short_name": "תקציב",
   "description": "ניהול תקציב ותזרים מזומנים חכם",
-  "start_url": "/login.html",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#f4f6f9",
   "theme_color": "#2ec4b6",

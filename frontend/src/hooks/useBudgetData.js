@@ -5,8 +5,8 @@ import {
     getStorageKey,
     getToken,
     setAuth
-} from '../auth.js';
-import { createBudgetApi } from '../utils/budgetApi.js';
+} from '../services/auth.js';
+import { createBudgetApi } from '../services/budgetApi.js';
 import {
     buildMonthOptions,
     getCurrentMonthKey,

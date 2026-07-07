@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { getToken } from '../auth.js';
+import { getToken } from '../../services/auth.js';
 
 export default function ProtectedRoute({ children }) {
     const location = useLocation();

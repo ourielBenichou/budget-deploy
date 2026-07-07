@@ -1,4 +1,4 @@
-import { calculateSummary } from '../utils/budgetHelpers.js';
+import { calculateSummary } from '../../utils/budgetHelpers.js';
 
 export default function SummaryCards({ monthData, onBankBalanceChange, onBankBalanceFocus, onBankBalanceBlur }) {
     const { totalIncome, totalExpenses, netBalance } = calculateSummary(monthData);

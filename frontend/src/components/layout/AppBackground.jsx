@@ -1,4 +1,4 @@
-import '../styles/app-background.css';
+import '../../styles/app-background.css';
 
 export default function AppBackground() {
     return (

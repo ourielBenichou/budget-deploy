@@ -9,7 +9,7 @@ import {
     Tooltip
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { buildChartData } from '../utils/budgetHelpers.js';
+import { buildChartData } from '../../utils/budgetHelpers.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip);
 

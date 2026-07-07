@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { getTransactionId } from '../utils/budgetHelpers.js';
-import { CancelIcon, DeleteIcon, EditIcon, SaveIcon } from './ActionIcons.jsx';
+import { getTransactionId } from '../../utils/budgetHelpers.js';
+import { CancelIcon, DeleteIcon, EditIcon, SaveIcon } from '../common/ActionIcons.jsx';
 
 export default function TransactionRow({
     transaction,
