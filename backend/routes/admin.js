@@ -7,6 +7,7 @@ import MonthSettings from '../models/MonthSettings.js';
 import RegistrationRequest from '../models/RegistrationRequest.js';
 import { requireAdmin, publicUser, applyAdminEmailRole } from '../middleware/auth.js';
 import { validatePassword } from '../utils/password.js';
+import { seedRecurringTransactions, getPreviousMonthEndingBalance } from '../utils/seedRecurring.js';
 
 const router = express.Router();
 
@@ -200,12 +201,10 @@ router.get('/users/:id/budget', requireAdmin, async (req, res) => {
         }
 
         const month = req.query.month || getCurrentMonthKey();
-        const [settings, transactions] = await Promise.all([
-            MonthSettings.findOne({ userId: user._id, month }),
-            Transaction.find({ userId: user._id, month })
-        ]);
-
-        const bankBalance = settings?.bankBalance ?? 5000;
+        const transactions = await seedRecurringTransactions(user._id, month);
+        const settings = await MonthSettings.findOne({ userId: user._id, month });
+        const bankBalance = settings?.bankBalance
+            ?? await getPreviousMonthEndingBalance(user._id, month);
 
         res.json({
             user: publicUser(user),

@@ -7,6 +7,14 @@ export function getCurrentMonthKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export function getPreviousMonthKey(monthKey) {
+    const [year, month] = monthKey.split('-').map(Number);
+    const date = new Date(year, month - 2, 1);
+    return getCurrentMonthKey(date);
+}
+
+export const RECURRING_TRANSACTION_TYPES = ['income', 'fixed-expense'];
+
 export function buildMonthOptions(baseDate = new Date()) {
     const options = [];
     for (let i = -6; i <= 6; i += 1) {
@@ -107,9 +115,34 @@ export function loadInitialMonthsData(storageKey, currentMonthKey) {
     return allMonthsData;
 }
 
+export function calculateEndingBalance(monthKey, bankBalance, transactions) {
+    const lastDay = getDaysInMonth(monthKey);
+    let balance = bankBalance;
+
+    transactions.forEach(t => {
+        if (t.type === 'income' && t.day <= lastDay) {
+            balance += t.amount;
+        } else if (t.type === 'fixed-expense' && t.day <= lastDay) {
+            balance -= t.amount;
+        } else if (t.type === 'one-time-income' && lastDay >= 10) {
+            balance += t.amount;
+        } else if (t.type === 'variable-expense' && lastDay >= 10) {
+            balance -= t.amount;
+        }
+    });
+
+    return balance;
+}
+
 export function getMonthData(allMonthsData, monthKey) {
     if (!allMonthsData[monthKey]) {
-        return { bankBalance: 5000, transactions: [] };
+        const previousMonth = getPreviousMonthKey(monthKey);
+        const previousData = allMonthsData[previousMonth];
+        const bankBalance = previousData
+            ? calculateEndingBalance(previousMonth, previousData.bankBalance, previousData.transactions)
+            : 5000;
+
+        return { bankBalance, transactions: [] };
     }
 
     const monthData = allMonthsData[monthKey];

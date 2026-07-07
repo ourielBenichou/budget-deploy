@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin.js';
 import User from './models/User.js';
 import { requireAuth } from './middleware/auth.js';
 import { buildTransactionLookup } from './utils/transactionQuery.js';
+import { seedRecurringTransactions, getPreviousMonthEndingBalance } from './utils/seedRecurring.js';
 
 import 'dotenv/config';
 
@@ -23,7 +24,7 @@ const distPath = fs.existsSync(path.join(stagedPath, 'index.html'))
     : path.join(legacyFrontendPath, 'dist');
 const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
 const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
-const APP_VERSION = '2026-06-18-fix-admin-panel-v1';
+const APP_VERSION = '2026-07-07-carry-balance-v1';
 
 function resolveFrontendFile(...parts) {
     const stagedFile = path.join(stagedPath, ...parts);
@@ -113,7 +114,13 @@ app.get('/api/transactions', requireAuth, async (req, res) => {
     try {
         const filter = { userId: req.userId };
         if (req.query.month) filter.month = req.query.month;
-        const transactions = await Transaction.find(filter);
+
+        let transactions = await Transaction.find(filter);
+
+        if (req.query.month && transactions.length === 0) {
+            transactions = await seedRecurringTransactions(req.userId, req.query.month);
+        }
+
         res.json(transactions);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -128,6 +135,14 @@ app.get('/api/months/:month', requireAuth, async (req, res) => {
         });
 
         if (settings) {
+            if (settings.recurringSeeded && settings.bankBalance === 5000) {
+                const carriedBalance = await getPreviousMonthEndingBalance(req.userId, req.params.month);
+                if (carriedBalance !== 5000) {
+                    settings.bankBalance = carriedBalance;
+                    await settings.save();
+                }
+            }
+
             res.json({
                 month: settings.month,
                 bankBalance: settings.bankBalance,
@@ -136,7 +151,8 @@ app.get('/api/months/:month', requireAuth, async (req, res) => {
             return;
         }
 
-        res.json({ month: req.params.month, bankBalance: 5000, exists: false });
+        const bankBalance = await getPreviousMonthEndingBalance(req.userId, req.params.month);
+        res.json({ month: req.params.month, bankBalance, exists: false });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
