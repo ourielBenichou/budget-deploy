@@ -1,4 +1,5 @@
 import { formatMoney } from '../../utils/format.js';
+import { getTransactionTimeDisplay } from '../../utils/installments.js';
 
 export default function BudgetTransactionsSection({ title, transactions }) {
     return (
@@ -16,19 +17,13 @@ export default function BudgetTransactionsSection({ title, transactions }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {transactions.map(transaction => {
-                            const timeDisplay = transaction.day
-                                ? `ב-${transaction.day} לחודש`
-                                : (transaction.date || '-');
-
-                            return (
-                                <tr key={transaction.id || transaction._id}>
-                                    <td>{transaction.description}</td>
-                                    <td>{timeDisplay}</td>
-                                    <td>{formatMoney(transaction.amount)}</td>
-                                </tr>
-                            );
-                        })}
+                        {transactions.map(transaction => (
+                            <tr key={transaction.id || transaction._id}>
+                                <td>{transaction.description}</td>
+                                <td>{getTransactionTimeDisplay(transaction)}</td>
+                                <td>{formatMoney(transaction.amount)}</td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             )}

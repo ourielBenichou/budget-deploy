@@ -15,6 +15,7 @@ import {
     loadInitialMonthsData,
     normalizeServerTransaction
 } from '../utils/budgetHelpers.js';
+import { hasInstallmentPlan } from '../utils/installments.js';
 
 export function useBudgetData(onUnauthorized) {
     const apiBase = getApiBase();
@@ -179,44 +180,86 @@ export function useBudgetData(onUnauthorized) {
         }, 500);
     }, [api, markLocalMutation, selectedMonth, updateMonthData]);
 
-    const addTransaction = useCallback(async (transaction) => {
-        updateMonthData(current => ({
-            ...current,
-            transactions: [...current.transactions, transaction]
-        }));
+    const addTransaction = useCallback(async (transactionOrList) => {
+        const transactions = Array.isArray(transactionOrList)
+            ? transactionOrList
+            : [transactionOrList];
+        const currentMonthTransactions = transactions.filter(
+            transaction => transaction.month === selectedMonth
+        );
+
+        if (currentMonthTransactions.length > 0) {
+            updateMonthData(current => ({
+                ...current,
+                transactions: [...current.transactions, ...currentMonthTransactions]
+            }));
+        }
 
         try {
-            const response = await api.createTransaction(transaction, selectedMonth);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || 'Failed to save');
+            for (const transaction of transactions) {
+                const response = await api.createTransaction(
+                    transaction,
+                    transaction.month || selectedMonth
+                );
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to save');
+                }
             }
+
             markLocalMutation();
             return true;
         } catch (error) {
-            updateMonthData(current => ({
-                ...current,
-                transactions: current.transactions.filter(t => getTransactionId(t) !== transaction.id)
-            }));
+            if (currentMonthTransactions.length > 0) {
+                const createdIds = new Set(currentMonthTransactions.map(getTransactionId));
+                updateMonthData(current => ({
+                    ...current,
+                    transactions: current.transactions.filter(
+                        transaction => !createdIds.has(getTransactionId(transaction))
+                    )
+                }));
+            }
             alert('שמירת התנועה נכשלה. נסה שוב.');
             return false;
         }
     }, [api, markLocalMutation, selectedMonth, updateMonthData]);
 
     const deleteTransaction = useCallback(async (id) => {
-        if (!confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) return;
+        const current = getMonthData(allMonthsData, selectedMonth);
+        const transaction = current.transactions.find(item => getTransactionId(item) === id);
+        if (!transaction) return;
+
+        let deleteEntirePlan = false;
+
+        if (hasInstallmentPlan(transaction)) {
+            deleteEntirePlan = confirm(
+                `זה תשלום ${transaction.installmentIndex} מתוך ${transaction.installmentCount}. למחוק את כל התשלומים בקרדיט?`
+            );
+            if (!deleteEntirePlan && !confirm('למחוק רק את התשלום הנוכחי?')) {
+                return;
+            }
+        } else if (!confirm('האם אתה בטוח שברצונך למחוק שורה זו?')) {
+            return;
+        }
 
         try {
-            const response = await api.deleteTransaction(id);
+            const response = deleteEntirePlan
+                ? await api.deleteInstallmentGroup(transaction.installmentGroupId)
+                : await api.deleteTransaction(id);
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 alert(errorData.message || errorData.error || 'מחיקה נכשלה בשרת');
                 return;
             }
 
-            updateMonthData(current => ({
-                ...current,
-                transactions: current.transactions.filter(t => getTransactionId(t) !== id)
+            updateMonthData(currentMonth => ({
+                ...currentMonth,
+                transactions: deleteEntirePlan
+                    ? currentMonth.transactions.filter(
+                        item => item.installmentGroupId !== transaction.installmentGroupId
+                    )
+                    : currentMonth.transactions.filter(item => getTransactionId(item) !== id)
             }));
             markLocalMutation();
             if (editingId === id) setEditingId(null);
@@ -224,7 +267,7 @@ export function useBudgetData(onUnauthorized) {
             console.error('Network error:', error);
             alert('שגיאת רשת במחיקה. נסה שוב.');
         }
-    }, [api, editingId, markLocalMutation, updateMonthData]);
+    }, [allMonthsData, api, editingId, markLocalMutation, selectedMonth, updateMonthData]);
 
     const saveInlineEdit = useCallback(async (id, payload) => {
         const current = getMonthData(allMonthsData, selectedMonth);

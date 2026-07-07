@@ -29,7 +29,10 @@ export function createBudgetApi(apiBase, onUnauthorized) {
         createTransaction(transaction, month) {
             return apiFetch(`${apiBase}/transactions`, {
                 method: 'POST',
-                body: JSON.stringify({ ...transaction, month })
+                body: JSON.stringify({
+                    ...transaction,
+                    month: transaction.month || month
+                })
             });
         },
         updateTransaction(id, payload) {
@@ -40,6 +43,11 @@ export function createBudgetApi(apiBase, onUnauthorized) {
         },
         deleteTransaction(id) {
             return apiFetch(`${apiBase}/transactions/${encodeURIComponent(id)}`, {
+                method: 'DELETE'
+            });
+        },
+        deleteInstallmentGroup(groupId) {
+            return apiFetch(`${apiBase}/transactions/installment-group/${encodeURIComponent(groupId)}`, {
                 method: 'DELETE'
             });
         },

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { buildInstallmentTransactions, splitInstallmentAmounts } from '../../utils/installments.js';
 
 const TYPE_OPTIONS = [
     { value: 'income', label: 'הכנסה חודשית קבועה' },
@@ -22,6 +23,20 @@ export default function TransactionForm({ selectedMonth, onAddTransaction }) {
     const [amount, setAmount] = useState('');
     const [type, setType] = useState('income');
     const [timeValue, setTimeValue] = useState(getDefaultTimeValue('income'));
+    const [installmentCount, setInstallmentCount] = useState('1');
+
+    const parsedInstallmentCount = Math.max(1, parseInt(installmentCount, 10) || 1);
+    const isCreditInstallment = type === 'variable-expense' && parsedInstallmentCount > 1;
+
+    const installmentPreview = useMemo(() => {
+        const totalAmount = parseFloat(amount);
+        if (!isCreditInstallment || Number.isNaN(totalAmount) || totalAmount <= 0) {
+            return null;
+        }
+
+        const [monthlyAmount] = splitInstallmentAmounts(totalAmount, parsedInstallmentCount);
+        return `${monthlyAmount.toLocaleString()} ₪ × ${parsedInstallmentCount} חודשים`;
+    }, [amount, isCreditInstallment, parsedInstallmentCount]);
 
     const timeField = useMemo(() => {
         if (type === 'variable-expense') {
@@ -45,6 +60,9 @@ export default function TransactionForm({ selectedMonth, onAddTransaction }) {
     const handleTypeChange = (nextType) => {
         setType(nextType);
         setTimeValue(getDefaultTimeValue(nextType));
+        if (nextType !== 'variable-expense') {
+            setInstallmentCount('1');
+        }
     };
 
     const handleSubmit = async (event) => {
@@ -53,25 +71,40 @@ export default function TransactionForm({ selectedMonth, onAddTransaction }) {
         const parsedAmount = parseFloat(amount);
         if (!description.trim() || Number.isNaN(parsedAmount)) return;
 
-        const transaction = {
-            id: Date.now().toString(),
-            description: description.trim(),
-            amount: parsedAmount,
-            type,
-            month: selectedMonth,
-            day: (type === 'income' || type === 'fixed-expense')
-                ? parseInt(timeValue, 10) || new Date().getDate()
-                : null,
-            date: type === 'variable-expense' ? timeValue : null
-        };
+        let transactions;
 
-        const saved = await onAddTransaction(transaction);
+        if (type === 'variable-expense' && parsedInstallmentCount > 1) {
+            transactions = buildInstallmentTransactions({
+                description: description.trim(),
+                totalAmount: parsedAmount,
+                installmentCount: parsedInstallmentCount,
+                startMonth: selectedMonth,
+                purchaseDate: timeValue
+            });
+        } else {
+            transactions = [{
+                id: Date.now().toString(),
+                description: description.trim(),
+                amount: parsedAmount,
+                type,
+                month: selectedMonth,
+                day: (type === 'income' || type === 'fixed-expense')
+                    ? parseInt(timeValue, 10) || new Date().getDate()
+                    : null,
+                date: type === 'variable-expense' ? timeValue : null,
+                installmentCount: 1,
+                installmentIndex: 1
+            }];
+        }
+
+        const saved = await onAddTransaction(transactions);
         if (!saved) return;
 
         setDescription('');
         setAmount('');
         setType('income');
         setTimeValue(getDefaultTimeValue('income'));
+        setInstallmentCount('1');
     };
 
     return (
@@ -91,7 +124,9 @@ export default function TransactionForm({ selectedMonth, onAddTransaction }) {
                 </div>
 
                 <div className="form-group width-sm">
-                    <label htmlFor="transaction-amount">סכום (₪):</label>
+                    <label htmlFor="transaction-amount">
+                        {isCreditInstallment ? 'סכום כולל (₪):' : 'סכום (₪):'}
+                    </label>
                     <input
                         type="number"
                         id="transaction-amount"
@@ -119,6 +154,20 @@ export default function TransactionForm({ selectedMonth, onAddTransaction }) {
                     </select>
                 </div>
 
+                {type === 'variable-expense' && (
+                    <div className="form-group width-sm">
+                        <label htmlFor="installment-count">תשלומים (חודשים)</label>
+                        <input
+                            type="number"
+                            id="installment-count"
+                            min="1"
+                            max="36"
+                            value={installmentCount}
+                            onChange={(event) => setInstallmentCount(event.target.value)}
+                        />
+                    </div>
+                )}
+
                 <div className="form-group width-md">
                     <label htmlFor="transaction-time-input">{timeField.label}</label>
                     <input
@@ -130,6 +179,10 @@ export default function TransactionForm({ selectedMonth, onAddTransaction }) {
                         onChange={(event) => setTimeValue(event.target.value)}
                     />
                 </div>
+
+                {installmentPreview && (
+                    <p className="installment-preview">{installmentPreview}</p>
+                )}
 
                 <button type="submit" className="btn-submit">הוסף למאזן</button>
             </form>

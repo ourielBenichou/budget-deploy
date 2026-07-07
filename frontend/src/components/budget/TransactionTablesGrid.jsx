@@ -17,7 +17,7 @@ const TABLE_CONFIG = [
     },
     {
         tableId: 'variable',
-        title: 'הוצאות משתנות (אשראי)',
+        title: 'הוצאות משתנות (אשראי/תשלומים)',
         boxClassName: 'variable-box',
         sumVariant: 'variable',
         types: ['variable-expense']

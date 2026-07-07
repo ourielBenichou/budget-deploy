@@ -197,6 +197,14 @@
 
         .btn-submit:hover { background-color: #24a195; }
 
+        .installment-preview {
+            width: 100%;
+            margin: 0 0 12px 0;
+            color: var(--info, #2563a8);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
         /* ׳¨׳©׳× ׳”׳˜׳‘׳׳׳•׳× */
         .tables-grid {
             display: grid;

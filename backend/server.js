@@ -24,7 +24,7 @@ const distPath = fs.existsSync(path.join(stagedPath, 'index.html'))
     : path.join(legacyFrontendPath, 'dist');
 const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
 const frontendPath = hasDistBuild ? distPath : legacyFrontendPath;
-const APP_VERSION = '2026-07-07-react-components-v1';
+const APP_VERSION = '2026-07-07-credit-installments-v1';
 
 function resolveFrontendFile(...parts) {
     const stagedFile = path.join(stagedPath, ...parts);
@@ -100,7 +100,10 @@ app.post('/api/transactions', requireAuth, async (req, res) => {
             type: req.body.type,
             month: req.body.month,
             day: req.body.day,
-            date: req.body.date
+            date: req.body.date,
+            installmentCount: req.body.installmentCount ?? 1,
+            installmentIndex: req.body.installmentIndex ?? 1,
+            installmentGroupId: req.body.installmentGroupId
         });
 
         await newTransaction.save();
@@ -172,6 +175,23 @@ app.put('/api/months/:month', requireAuth, async (req, res) => {
         );
 
         res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/transactions/installment-group/:groupId', requireAuth, async (req, res) => {
+    try {
+        const result = await Transaction.deleteMany({
+            userId: req.userId,
+            installmentGroupId: req.params.groupId
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Installment plan not found' });
+        }
+
+        res.json({ message: 'Deleted successfully', deletedCount: result.deletedCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

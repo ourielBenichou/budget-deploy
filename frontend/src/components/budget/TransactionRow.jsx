@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { getTransactionId } from '../../utils/budgetHelpers.js';
+import {
+    formatInstallmentDescription,
+    getTransactionTimeDisplay
+} from '../../utils/installments.js';
 import { CancelIcon, DeleteIcon, EditIcon, SaveIcon } from '../common/ActionIcons.jsx';
 
 export default function TransactionRow({
@@ -15,8 +19,8 @@ export default function TransactionRow({
     const [date, setDate] = useState(transaction.date || '');
 
     const txId = getTransactionId(transaction);
-    const displayName = transaction.description || transaction.name || 'ללא שם';
-    const timeDisplay = transaction.day ? `ב-${transaction.day} לחודש` : (transaction.date || '-');
+    const displayName = formatInstallmentDescription(transaction);
+    const timeDisplay = getTransactionTimeDisplay(transaction);
 
     const handleSave = () => {
         const payload = { amount: parseFloat(amount) };
@@ -32,9 +36,11 @@ export default function TransactionRow({
     };
 
     if (isEditing) {
+        const editName = transaction.description || transaction.name || 'ללא שם';
+
         return (
             <tr>
-                <td><strong>{displayName}</strong></td>
+                <td><strong>{editName}</strong></td>
                 <td>
                     {(transaction.type === 'income' || transaction.type === 'fixed-expense') && (
                         <input
@@ -46,7 +52,7 @@ export default function TransactionRow({
                             style={{ width: '55px', textAlign: 'center', padding: '3px', border: '1px solid #ccc', borderRadius: '4px' }}
                         />
                     )}
-                    {transaction.type === 'variable-expense' && (
+                    {transaction.type === 'variable-expense' && transaction.date && (
                         <input
                             type="date"
                             value={date}
@@ -54,6 +60,7 @@ export default function TransactionRow({
                             style={{ width: '115px', padding: '3px', border: '1px solid #ccc', borderRadius: '4px' }}
                         />
                     )}
+                    {transaction.type === 'variable-expense' && !transaction.date && timeDisplay}
                     {transaction.type === 'one-time-income' && '-'}
                 </td>
                 <td>

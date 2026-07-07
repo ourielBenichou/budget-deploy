@@ -8,7 +8,10 @@ const transactionSchema = new mongoose.Schema({
     type: { type: String, required: true },
     month: { type: String },
     day: Number,
-    date: String
+    date: String,
+    installmentCount: { type: Number, default: 1 },
+    installmentIndex: { type: Number, default: 1 },
+    installmentGroupId: String
 });
 
 transactionSchema.index({ userId: 1, id: 1 }, { unique: true });
